@@ -13,9 +13,10 @@ const app = express();
 app.set('trust proxy', 1);
 
 // Security Middlewares
-// Disable contentSecurityPolicy to allow Swagger UI stylesheets and scripts to load correctly
+// Disable contentSecurityPolicy and crossOriginResourcePolicy to allow cross-origin requests and Swagger
 app.use(helmet({
-  contentSecurityPolicy: false
+  contentSecurityPolicy: false,
+  crossOriginResourcePolicy: false
 }));
 app.use(cors());
 app.use(express.json());

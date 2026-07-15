@@ -23,7 +23,7 @@ if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
  * @returns {Promise<boolean>} - True if sent, false otherwise
  */
 async function sendVerificationCode(email, code) {
-  const from = process.env.SMTP_FROM || 'Partzix <noreply@partzix.com>';
+  const from = process.env.SMTP_FROM || 'Partzix <soporte@partzix.com>';
   const subject = 'Código de verificación de correo - Partzix';
   const htmlContent = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #f0f0f0; border-radius: 8px;">

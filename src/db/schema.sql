@@ -1,6 +1,3 @@
--- Create Database if not exists
-CREATE DATABASE IF NOT EXISTS `partzix_db` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE `partzix_db`;
 
 -- Table structure for warehouses
 CREATE TABLE IF NOT EXISTS `warehouses` (

@@ -15,12 +15,16 @@ async function runMigrations() {
 
     const schemaSql = fs.readFileSync(schemaPath, 'utf8');
 
-    // Split SQL by semicolons to execute statements individually,
-    // handling comments and empty statements.
-    const statements = schemaSql
+    // Remove comments and split SQL by semicolons to execute statements individually
+    const cleanSql = schemaSql
+      .split('\n')
+      .filter(line => !line.trim().startsWith('--'))
+      .join('\n');
+
+    const statements = cleanSql
       .split(';')
       .map(statement => statement.trim())
-      .filter(statement => statement.length > 0 && !statement.startsWith('--'));
+      .filter(statement => statement.length > 0);
 
     const connection = await pool.getConnection();
 

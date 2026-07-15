@@ -9,6 +9,9 @@ const { swaggerUi, swaggerSpec } = require('./config/swagger');
 
 const app = express();
 
+// Trust proxy settings for Cloudflare/Hostinger
+app.set('trust proxy', 1);
+
 // Security Middlewares
 // Disable contentSecurityPolicy to allow Swagger UI stylesheets and scripts to load correctly
 app.use(helmet({

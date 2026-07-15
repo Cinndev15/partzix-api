@@ -4,12 +4,24 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const warehouseRoutes = require('./routes/warehouseRoutes');
 
+const path = require('path');
+const { swaggerUi, swaggerSpec } = require('./config/swagger');
+
 const app = express();
 
 // Security Middlewares
-app.use(helmet());
+// Disable contentSecurityPolicy to allow Swagger UI stylesheets and scripts to load correctly
+app.use(helmet({
+  contentSecurityPolicy: false
+}));
 app.use(cors());
 app.use(express.json());
+
+// Serve Static Files (Landing Page)
+app.use(express.static(path.join(__dirname, '../public')));
+
+// Swagger UI Endpoint
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Rate Limiting
 const apiLimiter = rateLimit({

@@ -20,7 +20,129 @@ const validate = (req, res, next) => {
 };
 
 /**
- * Route: Request OTP for email validation
+ * @openapi
+ * components:
+ *   schemas:
+ *     WarehouseRegistration:
+ *       type: object
+ *       required:
+ *         - identification_number
+ *         - name
+ *         - address
+ *         - city
+ *         - user_class
+ *         - email
+ *       properties:
+ *         identification_number:
+ *           type: string
+ *           description: Número de identificación o NIT del almacén.
+ *           example: "80065888"
+ *         name:
+ *           type: string
+ *           description: Nombre y apellido o Razón Social de la empresa.
+ *           example: "Autopartes La 33"
+ *         address:
+ *           type: string
+ *           description: Dirección física del almacén.
+ *           example: "Calle 45 # 12-34"
+ *         city:
+ *           type: string
+ *           description: Ciudad, departamento y país del almacén.
+ *           example: "Bogotá, Bogota, Colombia"
+ *         phone:
+ *           type: string
+ *           description: Teléfono de contacto.
+ *           example: "+57 320 4923304"
+ *         contact_person:
+ *           type: string
+ *           description: Nombre de la persona de contacto.
+ *           example: "Felipe Gonzalez"
+ *         user_class:
+ *           type: string
+ *           description: Categoría del usuario.
+ *           example: "Empresa de autopartes"
+ *         website:
+ *           type: string
+ *           description: Dirección web del almacén (URL).
+ *           example: "https://imotriz.com"
+ *         email:
+ *           type: string
+ *           description: Correo electrónico del almacén (debe ser verificado previamente).
+ *           example: "fgonzalez@kayparts.co"
+ *     ErrorResponse:
+ *       type: object
+ *       properties:
+ *         success:
+ *           type: boolean
+ *           example: false
+ *         message:
+ *           type: string
+ *           example: "Error description details."
+ *     ValidationError:
+ *       type: object
+ *       properties:
+ *         success:
+ *           type: boolean
+ *           example: false
+ *         errors:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               field:
+ *                 type: string
+ *                 example: "email"
+ *               message:
+ *                 type: string
+ *                 example: "El formato del correo electrónico no es válido."
+ */
+
+/**
+ * @openapi
+ * /api/warehouses/send-otp:
+ *   post:
+ *     summary: Solicita un código OTP para validar el correo
+ *     description: Genera un código OTP de 6 dígitos con vigencia de 15 minutos y lo envía al correo indicado.
+ *     tags:
+ *       - Almacenes (Registro)
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: "fgonzalez@kayparts.co"
+ *     responses:
+ *       200:
+ *         description: Código OTP enviado con éxito.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Código de verificación enviado con éxito."
+ *       400:
+ *         description: Parámetros de entrada inválidos.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ValidationError'
+ *       500:
+ *         description: Error al enviar correo.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post(
   '/send-otp',
@@ -36,7 +158,49 @@ router.post(
 );
 
 /**
- * Route: Verify OTP code
+ * @openapi
+ * /api/warehouses/verify-otp:
+ *   post:
+ *     summary: Verifica el código OTP recibido por correo
+ *     description: Compara el código OTP provisto por el usuario contra el código guardado. Si coincide y no ha expirado, habilita el correo para el registro.
+ *     tags:
+ *       - Almacenes (Registro)
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - code
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: "fgonzalez@kayparts.co"
+ *               code:
+ *                 type: string
+ *                 example: "123456"
+ *     responses:
+ *       200:
+ *         description: Correo verificado con éxito.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Correo electrónico verificado con éxito."
+ *       400:
+ *         description: Código incorrecto, expirado o error de validación.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post(
   '/verify-otp',
@@ -57,7 +221,54 @@ router.post(
 );
 
 /**
- * Route: Register a new warehouse
+ * @openapi
+ * /api/warehouses/register:
+ *   post:
+ *     summary: Registra un nuevo almacén
+ *     description: Inserta un nuevo registro de almacén si todos los campos son válidos y el correo electrónico fue previamente verificado a través de OTP.
+ *     tags:
+ *       - Almacenes (Registro)
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/WarehouseRegistration'
+ *     responses:
+ *       201:
+ *         description: Almacén creado con éxito.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Almacén registrado con éxito."
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 12
+ *                     identification_number:
+ *                       type: string
+ *                       example: "80065888"
+ *                     name:
+ *                       type: string
+ *                       example: "Autopartes La 33"
+ *                     email:
+ *                       type: string
+ *                       example: "fgonzalez@kayparts.co"
+ *       400:
+ *         description: El almacén ya existe, el correo no está verificado o hay un error de validación en los campos.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post(
   '/register',

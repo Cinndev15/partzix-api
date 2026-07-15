@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Partzix REST API Dashboard</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #0b0f19;
+      --card-bg: rgba(17, 24, 39, 0.7);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --accent-color: #ff5500;
+      --accent-glow: rgba(255, 85, 0, 0.35);
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --success: #10b981;
+      --success-glow: rgba(16, 185, 129, 0.2);
+      --method-post: #3b82f6;
+      --method-get: #10b981;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1.5rem;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Ambient background glows */
+    body::before {
+      content: '';
+      position: absolute;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, var(--accent-glow) 0%, rgba(11, 15, 25, 0) 70%);
+      top: -100px;
+      right: -100px;
+      z-index: -1;
+      filter: blur(50px);
+      pointer-events: none;
+    }
+
+    body::after {
+      content: '';
+      position: absolute;
+      width: 450px;
+      height: 450px;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, rgba(11, 15, 25, 0) 70%);
+      bottom: -150px;
+      left: -150px;
+      z-index: -1;
+      filter: blur(60px);
+      pointer-events: none;
+    }
+
+    .container {
+      max-width: 1000px;
+      width: 100%;
+      z-index: 2;
+    }
+
+    /* System Status Indicator */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      color: var(--success);
+      padding: 0.4rem 1rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 2rem;
+      animation: pulseGlow 3s infinite alternate;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background-color: var(--success);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--success);
+    }
+
+    /* Header Logo & Slogan */
+    header {
+      text-align: center;
+      margin-bottom: 3.5rem;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.1rem;
+      font-family: 'Outfit', sans-serif;
+      font-size: 3rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .logo-white {
+      color: #ffffff;
+    }
+
+    .logo-accent {
+      color: var(--accent-color);
+      text-shadow: 0 0 25px var(--accent-glow);
+    }
+
+    header p {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      font-weight: 400;
+      margin-top: 0.5rem;
+      letter-spacing: 0.05em;
+    }
+
+    /* Info Grid Info Cards */
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 3rem;
+    }
+
+    .info-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .info-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(255, 85, 0, 0.3);
+    }
+
+    .info-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--accent-color), transparent);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .info-card:hover::before {
+      opacity: 1;
+    }
+
+    .info-card-title {
+      font-size: 0.75rem;
+      color: var(--accent-color);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.5rem;
+    }
+
+    .info-card-value {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 600;
+      word-break: break-all;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .copy-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 0.2rem;
+      border-radius: 4px;
+      transition: color 0.2s, background-color 0.2s;
+    }
+
+    .copy-btn:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    /* Core Endpoints Panel */
+    .endpoints-panel {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 2rem;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+      margin-bottom: 3rem;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      padding-bottom: 1.2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .panel-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .panel-format {
+      font-size: 0.75rem;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-muted);
+      padding: 0.3rem 0.8rem;
+      border-radius: 6px;
+      font-weight: 600;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    /* Endpoints Table */
+    .table-container {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    td {
+      padding: 1.2rem 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      font-size: 0.9rem;
+      vertical-align: middle;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Method Badges */
+    .method-badge {
+      display: inline-block;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      font-size: 0.75rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      letter-spacing: 0.03em;
+      text-align: center;
+      width: 55px;
+    }
+
+    .method-badge.post {
+      background: rgba(59, 130, 246, 0.15);
+      color: var(--method-post);
+      border: 1px solid rgba(59, 130, 246, 0.25);
+    }
+
+    .method-badge.get {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--method-get);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+
+    .endpoint-path {
+      font-family: 'Courier New', Courier, monospace;
+      font-weight: bold;
+      color: #ff884d;
+    }
+
+    .endpoint-desc {
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* Security tags */
+    .sec-badge {
+      display: inline-flex;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+    }
+
+    .sec-badge.public {
+      background: rgba(156, 163, 175, 0.08);
+      color: var(--text-muted);
+    }
+
+    .sec-badge.verified {
+      background: rgba(245, 158, 11, 0.1);
+      color: #f59e0b;
+      border: 1px solid rgba(245, 158, 11, 0.15);
+    }
+
+    /* Call to Action Button */
+    .cta-container {
+      text-align: center;
+      margin-top: 1rem;
+    }
+
+    .btn-swagger {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: linear-gradient(135deg, var(--accent-color) 0%, #ff884d 100%);
+      color: #ffffff;
+      padding: 0.9rem 2.2rem;
+      border-radius: 12px;
+      font-weight: 600;
+      text-decoration: none;
+      box-shadow: 0 4px 20px var(--accent-glow);
+      transition: all 0.3s ease;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .btn-swagger:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(255, 85, 0, 0.5);
+    }
+
+    /* Keyframes */
+    @keyframes pulseGlow {
+      0% {
+        box-shadow: 0 0 5px rgba(16, 185, 129, 0.1);
+      }
+      100% {
+        box-shadow: 0 0 15px rgba(16, 185, 129, 0.35);
+      }
+    }
+
+    /* Footer styling */
+    footer {
+      text-align: center;
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.3);
+      margin-top: auto;
+      padding-top: 3rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <!-- Status indicator -->
+    <div style="text-align: center;">
+      <div class="status-badge">
+        <span class="status-dot"></span>
+        SYSTEM OPERATIONAL
+      </div>
+    </div>
+
+    <!-- Header Section -->
+    <header>
+      <div class="logo-container">
+        <span class="logo-white">PART</span><span class="logo-accent">ZIX</span>
+      </div>
+      <p>Professional Restful API Documentation Portal</p>
+    </header>
+
+    <!-- Info Grid -->
+    <div class="info-grid">
+      <div class="info-card">
+        <div class="info-card-title">Base URL</div>
+        <div class="info-card-value">
+          <span id="baseUrl">http://localhost:3000/api</span>
+          <button class="copy-btn" onclick="copyBaseUrl()" title="Copy to clipboard">
+            <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+          </button>
+        </div>
+      </div>
+      
+      <div class="info-card">
+        <div class="info-card-title">Version</div>
+        <div class="info-card-value">
+          <span>1.0.0 (Latest)</span>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <div class="info-card-title">Authentication</div>
+        <div class="info-card-value">
+          <span>OTP Email Validation</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Core Endpoints Panel -->
+    <div class="endpoints-panel">
+      <div class="panel-header">
+        <h3 class="panel-title">Core API Endpoints</h3>
+        <span class="panel-format">Format: JSON</span>
+      </div>
+      
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 120px;">Method</th>
+              <th>Endpoint</th>
+              <th>Description</th>
+              <th style="width: 130px; text-align: right;">Security</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><span class="endpoint-path">/api/warehouses/send-otp</span></td>
+              <td class="endpoint-desc">Sends a 6-digit OTP verification code to the requested email. Valid for 15 minutes.</td>
+              <td style="text-align: right;"><span class="sec-badge public">PUBLIC</span></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><span class="endpoint-path">/api/warehouses/verify-otp</span></td>
+              <td class="endpoint-desc">Validates the OTP code received by email. If correct, unlocks the email for registration.</td>
+              <td style="text-align: right;"><span class="sec-badge public">PUBLIC</span></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><span class="endpoint-path">/api/warehouses/register</span></td>
+              <td class="endpoint-desc">Registers a new warehouse in the database (requires a previously verified email address).</td>
+              <td style="text-align: right;"><span class="sec-badge verified">OTP VERIFIED</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Call to Action -->
+    <div class="cta-container">
+      <a href="/api-docs" class="btn-swagger" target="_blank">
+        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+        Interactive Swagger UI Docs
+      </a>
+    </div>
+
+  </div>
+
+  <footer>
+    &copy; <span id="year"></span> Partzix professional REST API. Built by Cinndev. All rights reserved.
+  </footer>
+
+  <script>
+    // Set dynamic current host as Base URL
+    const currentHost = window.location.origin;
+    document.getElementById('baseUrl').innerText = currentHost + '/api';
+    document.getElementById('year').innerText = new Date().getFullYear();
+
+    // Copy to clipboard function
+    function copyBaseUrl() {
+      const baseUrlText = document.getElementById('baseUrl').innerText;
+      navigator.clipboard.writeText(baseUrlText).then(() => {
+        alert('Base URL copiada al portapapeles: ' + baseUrlText);
+      }).catch(err => {
+        console.error('Error al copiar: ', err);
+      });
+    }
+  </script>
+</body>
+</html>

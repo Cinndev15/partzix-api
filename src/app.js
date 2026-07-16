@@ -56,8 +56,6 @@ const otpLimiter = rateLimit({
 app.use('/api/', apiLimiter);
 app.use('/api/warehouses/send-otp', otpLimiter);
 app.use('/api/warehouses/verify-otp', otpLimiter);
-app.use('/api/providers/send-phone-otp', otpLimiter);
-app.use('/api/providers/verify-phone-otp', otpLimiter);
 
 /**
  * @openapi

@@ -51,8 +51,7 @@ const uploadFields = upload.fields([
   { name: 'logo', maxCount: 1 },
   { name: 'rut_doc', maxCount: 1 },
   { name: 'id_doc', maxCount: 1 },
-  { name: 'chamber_of_commerce_doc', maxCount: 1 },
-  { name: 'registrar_photo', maxCount: 1 }
+  { name: 'chamber_of_commerce_doc', maxCount: 1 }
 ]);
 
 module.exports = {

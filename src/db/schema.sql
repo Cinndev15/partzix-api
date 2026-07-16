@@ -1,6 +1,11 @@
+-- Drop tables if they exist in correct dependency order
+DROP TABLE IF EXISTS `provider_profiles`;
+DROP TABLE IF EXISTS `warehouses`;
+DROP TABLE IF EXISTS `email_verifications`;
+DROP TABLE IF EXISTS `phone_verifications`;
 
 -- Table structure for warehouses
-CREATE TABLE IF NOT EXISTS `warehouses` (
+CREATE TABLE `warehouses` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `identification_number` VARCHAR(50) NOT NULL UNIQUE,
   `name` VARCHAR(150) NOT NULL,
@@ -19,7 +24,7 @@ CREATE TABLE IF NOT EXISTS `warehouses` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Table structure for email verifications (OTP)
-CREATE TABLE IF NOT EXISTS `email_verifications` (
+CREATE TABLE `email_verifications` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `email` VARCHAR(150) NOT NULL,
   `code` VARCHAR(6) NOT NULL,
@@ -31,7 +36,7 @@ CREATE TABLE IF NOT EXISTS `email_verifications` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Table structure for provider profiles (Step 2 configuration)
-CREATE TABLE IF NOT EXISTS `provider_profiles` (
+CREATE TABLE `provider_profiles` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `warehouse_id` INT NOT NULL UNIQUE,
   `short_name` VARCHAR(100) NOT NULL,
@@ -46,23 +51,9 @@ CREATE TABLE IF NOT EXISTS `provider_profiles` (
   `rut_doc_path` VARCHAR(255) NOT NULL,
   `id_doc_path` VARCHAR(255) NOT NULL,
   `chamber_of_commerce_doc_path` VARCHAR(255) NOT NULL,
-  `registrar_photo_path` VARCHAR(255) NOT NULL,
   `received_advisor_assistance` BOOLEAN DEFAULT FALSE,
   `registrar_name` VARCHAR(150) NOT NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT `fk_provider_warehouse` FOREIGN KEY (`warehouse_id`) REFERENCES `warehouses` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Table structure for phone verifications (OTP)
-CREATE TABLE IF NOT EXISTS `phone_verifications` (
-  `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `phone` VARCHAR(25) NOT NULL,
-  `code` VARCHAR(6) NOT NULL,
-  `expires_at` DATETIME NOT NULL,
-  `verified` BOOLEAN DEFAULT FALSE,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  INDEX `idx_phone_code` (`phone`, `code`),
-  INDEX `idx_phone_verified` (`phone`, `verified`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-

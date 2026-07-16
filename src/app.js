@@ -57,7 +57,29 @@ app.use('/api/', apiLimiter);
 app.use('/api/warehouses/send-otp', otpLimiter);
 app.use('/api/warehouses/verify-otp', otpLimiter);
 
-// Health Check
+/**
+ * @openapi
+ * /health:
+ *   get:
+ *     summary: Verifica el estado del servidor
+ *     description: Endpoint público para monitorear el estado de disponibilidad del servidor API.
+ *     tags:
+ *       - Sistema
+ *     responses:
+ *       200:
+ *         description: El servidor está disponible y operativo.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: "OK"
+ *                 timestamp:
+ *                   type: string
+ *                   example: "2026-07-16T03:00:00.000Z"
+ */
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'OK',

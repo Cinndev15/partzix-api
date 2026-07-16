@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const warehouseRoutes = require('./routes/warehouseRoutes');
+const providerRoutes = require('./routes/providerRoutes');
 
 const path = require('path');
 const { swaggerUi, swaggerSpec } = require('./config/swagger');
@@ -21,8 +22,9 @@ app.use(helmet({
 app.use(cors());
 app.use(express.json());
 
-// Serve Static Files (Landing Page)
+// Serve Static Files (Landing Page & Uploads)
 app.use(express.static(path.join(__dirname, '../public')));
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Swagger UI Endpoint
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
@@ -65,6 +67,7 @@ app.get('/health', (req, res) => {
 
 // Routes
 app.use('/api/warehouses', warehouseRoutes);
+app.use('/api/providers', providerRoutes);
 
 // 404 Route handler
 app.use((req, res, next) => {

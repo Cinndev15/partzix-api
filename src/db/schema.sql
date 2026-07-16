@@ -29,3 +29,28 @@ CREATE TABLE IF NOT EXISTS `email_verifications` (
   INDEX `idx_email_code` (`email`, `code`),
   INDEX `idx_email_verified` (`email`, `verified`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table structure for provider profiles (Step 2 configuration)
+CREATE TABLE IF NOT EXISTS `provider_profiles` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `warehouse_id` INT NOT NULL UNIQUE,
+  `short_name` VARCHAR(100) NOT NULL,
+  `store_url` VARCHAR(255) NOT NULL,
+  `advisor_phone` VARCHAR(20) NOT NULL,
+  `advisor_whatsapp` VARCHAR(20) NOT NULL,
+  `store_address` VARCHAR(255) NOT NULL,
+  `store_city` VARCHAR(100) NOT NULL,
+  `specialty` VARCHAR(100) NOT NULL,
+  `description` TEXT NOT NULL,
+  `logo_path` VARCHAR(255) DEFAULT NULL,
+  `rut_doc_path` VARCHAR(255) NOT NULL,
+  `id_doc_path` VARCHAR(255) NOT NULL,
+  `chamber_of_commerce_doc_path` VARCHAR(255) NOT NULL,
+  `registrar_photo_path` VARCHAR(255) NOT NULL,
+  `received_advisor_assistance` BOOLEAN DEFAULT FALSE,
+  `registrar_name` VARCHAR(150) NOT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT `fk_provider_warehouse` FOREIGN KEY (`warehouse_id`) REFERENCES `warehouses` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+

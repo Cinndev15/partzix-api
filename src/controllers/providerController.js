@@ -23,7 +23,6 @@ async function setupProvider(req, res, next) {
   const {
     warehouse_id,
     short_name,
-    store_url,
     advisor_phone,
     advisor_whatsapp,
     store_address,
@@ -41,7 +40,7 @@ async function setupProvider(req, res, next) {
       return res.status(400).json({ success: false, message: 'El ID de almacén (warehouse_id) es requerido.' });
     }
 
-    if (!short_name || !store_url || !advisor_phone || !advisor_whatsapp || !store_address || !store_city || !specialty || !description || !registrar_name) {
+    if (!short_name || !advisor_phone || !advisor_whatsapp || !store_address || !store_city || !specialty || !description || !registrar_name) {
       deleteUploadedFiles(files);
       return res.status(400).json({ success: false, message: 'Todos los campos obligatorios del paso 2 deben ser provistos.' });
     }
@@ -82,17 +81,16 @@ async function setupProvider(req, res, next) {
     // 5. Insert profile into database (without registrar_photo_path)
     const insertQuery = `
       INSERT INTO provider_profiles (
-        warehouse_id, short_name, store_url, advisor_phone, advisor_whatsapp,
+        warehouse_id, short_name, advisor_phone, advisor_whatsapp,
         store_address, store_city, specialty, description, logo_path,
         rut_doc_path, id_doc_path, chamber_of_commerce_doc_path,
         received_advisor_assistance, registrar_name
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const [result] = await pool.query(insertQuery, [
       warehouse_id,
       short_name,
-      store_url,
       advisor_phone,
       advisor_whatsapp,
       store_address,
@@ -113,8 +111,7 @@ async function setupProvider(req, res, next) {
       data: {
         id: result.insertId,
         warehouse_id,
-        short_name,
-        store_url
+        short_name
       }
     });
   } catch (error) {

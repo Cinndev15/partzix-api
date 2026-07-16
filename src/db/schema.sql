@@ -40,7 +40,6 @@ CREATE TABLE `provider_profiles` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `warehouse_id` INT NOT NULL UNIQUE,
   `short_name` VARCHAR(100) NOT NULL,
-  `store_url` VARCHAR(255) NOT NULL,
   `advisor_phone` VARCHAR(20) NOT NULL,
   `advisor_whatsapp` VARCHAR(20) NOT NULL,
   `store_address` VARCHAR(255) NOT NULL,

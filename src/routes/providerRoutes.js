@@ -29,9 +29,6 @@ const router = express.Router();
  *             short_name:
  *               type: string
  *               example: "Mi Tienda Repuestos"
- *             store_url:
- *               type: string
- *               example: "https://www.imotriz.com/tienda/mi-tienda"
  */
 
 /**
@@ -51,7 +48,6 @@ const router = express.Router();
  *             required:
  *               - warehouse_id
  *               - short_name
- *               - store_url
  *               - advisor_phone
  *               - advisor_whatsapp
  *               - store_address
@@ -71,10 +67,6 @@ const router = express.Router();
  *                 type: string
  *                 description: Nombre comercial corto.
  *                 example: "Mi Tienda Repuestos"
- *               store_url:
- *                 type: string
- *                 description: URL deseada para la tienda virtual.
- *                 example: "https://www.imotriz.com/tienda/mi-tienda"
  *               advisor_phone:
  *                 type: string
  *                 description: Teléfono fijo de contacto del asesor.

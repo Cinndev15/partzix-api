@@ -54,3 +54,15 @@ CREATE TABLE IF NOT EXISTS `provider_profiles` (
   CONSTRAINT `fk_provider_warehouse` FOREIGN KEY (`warehouse_id`) REFERENCES `warehouses` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Table structure for phone verifications (OTP)
+CREATE TABLE IF NOT EXISTS `phone_verifications` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `phone` VARCHAR(25) NOT NULL,
+  `code` VARCHAR(6) NOT NULL,
+  `expires_at` DATETIME NOT NULL,
+  `verified` BOOLEAN DEFAULT FALSE,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX `idx_phone_code` (`phone`, `code`),
+  INDEX `idx_phone_verified` (`phone`, `verified`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+

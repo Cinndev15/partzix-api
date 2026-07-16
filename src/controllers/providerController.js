@@ -1,5 +1,6 @@
 const fs = require('fs');
 const { pool } = require('../db/db');
+const { sendPhoneVerificationCode } = require('../services/smsService');
 
 /**
  * Helper to delete uploaded files in case of errors
@@ -13,6 +14,91 @@ function deleteUploadedFiles(files) {
       });
     });
   });
+}
+
+/**
+ * Generate a 6-digit random code
+ */
+function generateOTP() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+/**
+ * Request verification code (OTP) for phone number
+ */
+async function sendPhoneOtp(req, res, next) {
+  const { phone } = req.body;
+
+  try {
+    const code = generateOTP();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    // Save code to database
+    const query = `
+      INSERT INTO phone_verifications (phone, code, expires_at)
+      VALUES (?, ?, ?)
+    `;
+    await pool.query(query, [phone, code, expiresAt]);
+
+    // Send code via SMS / WhatsApp
+    await sendPhoneVerificationCode(phone, code);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Código de verificación de teléfono enviado con éxito.'
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Verify phone OTP
+ */
+async function verifyPhoneOtp(req, res, next) {
+  const { phone, code } = req.body;
+
+  try {
+    // Find the latest active code for this phone
+    const query = `
+      SELECT id, expires_at FROM phone_verifications
+      WHERE phone = ? AND code = ? AND verified = FALSE
+      ORDER BY created_at DESC LIMIT 1
+    `;
+    const [rows] = await pool.query(query, [phone, code]);
+
+    if (rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Código de verificación inválido o ya utilizado.'
+      });
+    }
+
+    const record = rows[0];
+    const now = new Date();
+
+    if (new Date(record.expires_at) < now) {
+      return res.status(400).json({
+        success: false,
+        message: 'El código de verificación ha expirado.'
+      });
+    }
+
+    // Mark as verified
+    const updateQuery = `
+      UPDATE phone_verifications
+      SET verified = TRUE
+      WHERE id = ?
+    `;
+    await pool.query(updateQuery, [record.id]);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Teléfono verificado con éxito.'
+    });
+  } catch (error) {
+    next(error);
+  }
 }
 
 /**
@@ -71,7 +157,22 @@ async function setupProvider(req, res, next) {
       return res.status(400).json({ success: false, message: 'Este almacén ya tiene una cuenta de proveedor configurada.' });
     }
 
-    // 4. Save file paths (store relative paths to publicize/serve them easily)
+    // 4. Verify that the advisor_whatsapp phone has been verified in DB
+    const checkPhoneQuery = `
+      SELECT id FROM phone_verifications
+      WHERE phone = ? AND verified = TRUE AND created_at >= NOW() - INTERVAL 1 HOUR
+      LIMIT 1
+    `;
+    const [phoneVerifications] = await pool.query(checkPhoneQuery, [advisor_whatsapp]);
+    if (phoneVerifications.length === 0) {
+      deleteUploadedFiles(files);
+      return res.status(400).json({
+        success: false,
+        message: 'El teléfono de WhatsApp del asesor no ha sido verificado. Por favor valídelo primero.'
+      });
+    }
+
+    // 5. Save file paths (store relative paths to publicize/serve them easily)
     const logo_path = files.logo ? `/uploads/${files.logo[0].filename}` : null;
     const rut_doc_path = `/uploads/${files.rut_doc[0].filename}`;
     const id_doc_path = `/uploads/${files.id_doc[0].filename}`;
@@ -80,7 +181,7 @@ async function setupProvider(req, res, next) {
 
     const isAssisted = received_advisor_assistance === 'true' || received_advisor_assistance === true || received_advisor_assistance === '1';
 
-    // 5. Insert profile into database
+    // 6. Insert profile into database
     const insertQuery = `
       INSERT INTO provider_profiles (
         warehouse_id, short_name, store_url, advisor_phone, advisor_whatsapp,
@@ -127,5 +228,7 @@ async function setupProvider(req, res, next) {
 }
 
 module.exports = {
+  sendPhoneOtp,
+  verifyPhoneOtp,
   setupProvider
 };

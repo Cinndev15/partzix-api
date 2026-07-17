@@ -90,3 +90,7 @@ CREATE TABLE `password_resets` (
 INSERT INTO `users` (email, password_hash, role, status)
 VALUES ('admin@partzix.com', '$2b$10$QHRlHU2BreLqtBBumYD4FOG5obRG8VHUwgRZSQ0z/KKDhMTPsny0y', 'admin', 'approved');
 
+-- Insert new admin user (Password: Fergoga0803)
+INSERT INTO `users` (email, password_hash, role, status)
+VALUES ('fgonzalez@partzix.com', '$2b$10$FquFVfRK9YgEf8PyQOD3vebUzjhKPsqRgdwSJmsK8RDbQcXqUJkPG', 'admin', 'approved');
+

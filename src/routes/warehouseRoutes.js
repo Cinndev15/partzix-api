@@ -29,6 +29,7 @@ const validate = (req, res, next) => {
  *         - identification_number
  *         - name
  *         - address
+ *         - department
  *         - city
  *         - user_class
  *         - email
@@ -45,10 +46,18 @@ const validate = (req, res, next) => {
  *           type: string
  *           description: Dirección física del almacén.
  *           example: "Calle 45 # 12-34"
+ *         country:
+ *           type: string
+ *           description: País del almacén (por defecto Colombia).
+ *           example: "Colombia"
+ *         department:
+ *           type: string
+ *           description: Departamento del almacén.
+ *           example: "Cundinamarca"
  *         city:
  *           type: string
- *           description: Ciudad, departamento y país del almacén.
- *           example: "Bogotá, Bogota, Colombia"
+ *           description: Ciudad o municipio del almacén.
+ *           example: "Bogotá"
  *         phone:
  *           type: string
  *           description: Teléfono de contacto.
@@ -282,6 +291,12 @@ router.post(
     body('address')
       .trim()
       .notEmpty().withMessage('La dirección es requerida.'),
+    body('country')
+      .optional()
+      .trim(),
+    body('department')
+      .trim()
+      .notEmpty().withMessage('El departamento es requerido.'),
     body('city')
       .trim()
       .notEmpty().withMessage('La ciudad es requerida.'),

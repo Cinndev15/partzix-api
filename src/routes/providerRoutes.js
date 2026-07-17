@@ -51,6 +51,7 @@ const router = express.Router();
  *               - advisor_phone
  *               - advisor_whatsapp
  *               - store_address
+ *               - department
  *               - store_city
  *               - specialty
  *               - description
@@ -79,6 +80,14 @@ const router = express.Router();
  *                 type: string
  *                 description: Dirección de la tienda.
  *                 example: "Calle 100 # 15-20"
+ *               country:
+ *                 type: string
+ *                 description: País de la tienda.
+ *                 example: "Colombia"
+ *               department:
+ *                 type: string
+ *                 description: Departamento de la tienda.
+ *                 example: "Bogotá D.C."
  *               store_city:
  *                 type: string
  *                 description: Ciudad de la tienda.

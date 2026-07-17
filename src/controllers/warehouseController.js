@@ -102,6 +102,8 @@ async function registerWarehouse(req, res, next) {
     identification_number,
     name,
     address,
+    country,
+    department,
     city,
     phone,
     contact_person,
@@ -143,15 +145,17 @@ async function registerWarehouse(req, res, next) {
     // 3. Insert new warehouse
     const insertQuery = `
       INSERT INTO warehouses (
-        identification_number, name, address, city, phone,
+        identification_number, name, address, country, department, city, phone,
         contact_person, user_class, website, email, is_email_verified
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)
     `;
 
     const [result] = await pool.query(insertQuery, [
       identification_number,
       name,
       address,
+      country || 'Colombia',
+      department || '',
       city,
       phone || null,
       contact_person || null,

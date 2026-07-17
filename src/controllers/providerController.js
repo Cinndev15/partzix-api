@@ -26,6 +26,8 @@ async function setupProvider(req, res, next) {
     advisor_phone,
     advisor_whatsapp,
     store_address,
+    country,
+    department,
     store_city,
     specialty,
     description,
@@ -40,7 +42,7 @@ async function setupProvider(req, res, next) {
       return res.status(400).json({ success: false, message: 'El ID de almacén (warehouse_id) es requerido.' });
     }
 
-    if (!short_name || !advisor_phone || !advisor_whatsapp || !store_address || !store_city || !specialty || !description || !registrar_name) {
+    if (!short_name || !advisor_phone || !advisor_whatsapp || !store_address || !department || !store_city || !specialty || !description || !registrar_name) {
       deleteUploadedFiles(files);
       return res.status(400).json({ success: false, message: 'Todos los campos obligatorios del paso 2 deben ser provistos.' });
     }
@@ -82,10 +84,10 @@ async function setupProvider(req, res, next) {
     const insertQuery = `
       INSERT INTO provider_profiles (
         warehouse_id, short_name, advisor_phone, advisor_whatsapp,
-        store_address, store_city, specialty, description, logo_path,
+        store_address, country, department, store_city, specialty, description, logo_path,
         rut_doc_path, id_doc_path, chamber_of_commerce_doc_path,
         received_advisor_assistance, registrar_name
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const [result] = await pool.query(insertQuery, [
@@ -94,6 +96,8 @@ async function setupProvider(req, res, next) {
       advisor_phone,
       advisor_whatsapp,
       store_address,
+      country || 'Colombia',
+      department || '',
       store_city,
       specialty,
       description,

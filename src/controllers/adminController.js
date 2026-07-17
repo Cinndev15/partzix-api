@@ -144,8 +144,80 @@ async function getAllWarehouses(req, res, next) {
   }
 }
 
+/**
+ * Create a user account for an approved warehouse
+ */
+async function createWarehouseUser(req, res, next) {
+  const { warehouseId } = req.params;
+  const { email, password } = req.body;
+  const bcrypt = require('bcryptjs');
+
+  try {
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'El correo electrónico y la contraseña son requeridos.'
+      });
+    }
+
+    // 1. Check if warehouse exists and is approved
+    const [warehouses] = await pool.query('SELECT id, status, email FROM warehouses WHERE id = ?', [warehouseId]);
+    if (warehouses.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Almacén no encontrado.'
+      });
+    }
+
+    const warehouse = warehouses[0];
+    if (warehouse.status !== 'Aprobado') {
+      return res.status(400).json({
+        success: false,
+        message: 'El almacén debe estar Aprobado para crearle un usuario.'
+      });
+    }
+
+    // 2. Check if a user is already linked to this warehouse
+    const [linkedUsers] = await pool.query('SELECT id FROM users WHERE warehouse_id = ?', [warehouseId]);
+    if (linkedUsers.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Este almacén ya tiene una cuenta de usuario asignada.'
+      });
+    }
+
+    // 3. Check if email is already registered
+    const [emailUsers] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
+    if (emailUsers.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'El correo electrónico provisto ya está registrado.'
+      });
+    }
+
+    // 4. Encrypt password and insert user
+    const passwordHash = bcrypt.hashSync(password, 10);
+    const [result] = await pool.query(
+      'INSERT INTO users (email, password_hash, role, status, warehouse_id) VALUES (?, ?, "warehouse", "approved", ?)',
+      [email, passwordHash, warehouseId]
+    );
+
+    return res.status(201).json({
+      success: true,
+      message: 'Usuario creado con éxito para el almacén.',
+      data: {
+        user_id: result.insertId,
+        email
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   getPendingWarehouses,
   updateWarehouseStatus,
-  getAllWarehouses
+  getAllWarehouses,
+  createWarehouseUser
 };

@@ -1,5 +1,5 @@
 const express = require('express');
-const { getPendingWarehouses, updateWarehouseStatus, getAllWarehouses } = require('../controllers/adminController');
+const { getPendingWarehouses, updateWarehouseStatus, getAllWarehouses, createWarehouseUser } = require('../controllers/adminController');
 const { authenticateToken, requireRole } = require('../middlewares/authMiddleware');
 
 const router = express.Router();
@@ -91,5 +91,52 @@ router.get('/pending', getPendingWarehouses);
  *         description: Almacén no encontrado.
  */
 router.post('/warehouses/:warehouseId/status', updateWarehouseStatus);
+
+/**
+ * @openapi
+ * /api/admin/warehouses/{warehouseId}/user:
+ *   post:
+ *     summary: Crea una cuenta de usuario para un almacén aprobado (Solo Admin)
+ *     description: Registra una cuenta de usuario con rol 'warehouse' vinculada al almacén especificado. El almacén debe estar previamente Aprobado. Requiere token Bearer JWT de administrador.
+ *     tags:
+ *       - Administración
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: warehouseId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del almacén.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: "fgonzalez@cinndev.co"
+ *               password:
+ *                 type: string
+ *                 example: "temporal123"
+ *     responses:
+ *       201:
+ *         description: Usuario creado con éxito.
+ *       400:
+ *         description: Parámetros inválidos, el almacén no está aprobado o ya tiene un usuario.
+ *       401:
+ *         description: No autenticado.
+ *       403:
+ *         description: No autorizado.
+ *       404:
+ *         description: Almacén no encontrado.
+ */
+router.post('/warehouses/:warehouseId/user', createWarehouseUser);
 
 module.exports = router;

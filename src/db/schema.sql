@@ -1,4 +1,6 @@
 -- Drop tables if they exist in correct dependency order
+DROP TABLE IF EXISTS `password_resets`;
+DROP TABLE IF EXISTS `users`;
 DROP TABLE IF EXISTS `provider_profiles`;
 DROP TABLE IF EXISTS `warehouses`;
 DROP TABLE IF EXISTS `email_verifications`;
@@ -60,3 +62,31 @@ CREATE TABLE `provider_profiles` (
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT `fk_provider_warehouse` FOREIGN KEY (`warehouse_id`) REFERENCES `warehouses` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table structure for users (Authentication & Roles)
+CREATE TABLE `users` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `email` VARCHAR(150) NOT NULL UNIQUE,
+  `password_hash` VARCHAR(255) NOT NULL,
+  `role` ENUM('admin', 'warehouse') DEFAULT 'warehouse',
+  `status` ENUM('pending', 'approved', 'suspended') DEFAULT 'pending',
+  `warehouse_id` INT DEFAULT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT `fk_user_warehouse` FOREIGN KEY (`warehouse_id`) REFERENCES `warehouses` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table structure for password resets
+CREATE TABLE `password_resets` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `email` VARCHAR(150) NOT NULL,
+  `token` VARCHAR(100) NOT NULL,
+  `expires_at` DATETIME NOT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX `idx_email_token` (`email`, `token`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Insert default admin user (Password: AdminPartzix2026!)
+INSERT INTO `users` (email, password_hash, role, status)
+VALUES ('admin@partzix.com', '$2b$10$QHRlHU2BreLqtBBumYD4FOG5obRG8VHUwgRZSQ0z/KKDhMTPsny0y', 'admin', 'approved');
+

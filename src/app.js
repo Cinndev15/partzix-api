@@ -4,6 +4,8 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const warehouseRoutes = require('./routes/warehouseRoutes');
 const providerRoutes = require('./routes/providerRoutes');
+const authRoutes = require('./routes/authRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 const path = require('path');
 const { swaggerUi, swaggerSpec } = require('./config/swagger');
@@ -90,6 +92,8 @@ app.get('/health', (req, res) => {
 // Routes
 app.use('/api/warehouses', warehouseRoutes);
 app.use('/api/providers', providerRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
 
 // 404 Route handler
 app.use((req, res, next) => {

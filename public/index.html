@@ -476,6 +476,42 @@
               <td class="endpoint-desc">Configures the provider account (Step 2) with store details, specialty, and uploads required documents (RUT, ID, Chamber of Commerce, logo).</td>
               <td style="text-align: right;"><span class="sec-badge verified">MULTIPART</span></td>
             </tr>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><span class="endpoint-path">/api/auth/register</span></td>
+              <td class="endpoint-desc">Registers login credentials for an existing warehouse (sets status to 'pending').</td>
+              <td style="text-align: right;"><span class="sec-badge public">PUBLIC</span></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><span class="endpoint-path">/api/auth/login</span></td>
+              <td class="endpoint-desc">Authenticates users (admin or approved warehouses) and returns a Bearer JWT token.</td>
+              <td style="text-align: right;"><span class="sec-badge public">PUBLIC</span></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><span class="endpoint-path">/api/auth/forgot-password</span></td>
+              <td class="endpoint-desc">Requests a 6-digit password reset OTP code sent via email.</td>
+              <td style="text-align: right;"><span class="sec-badge public">PUBLIC</span></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><span class="endpoint-path">/api/auth/reset-password</span></td>
+              <td class="endpoint-desc">Resets account password using the received 6-digit recovery OTP code.</td>
+              <td style="text-align: right;"><span class="sec-badge public">PUBLIC</span></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge get">GET</span></td>
+              <td><span class="endpoint-path">/api/admin/pending</span></td>
+              <td class="endpoint-desc">Lists all registered warehouses waiting for approval (administrator restricted).</td>
+              <td style="text-align: right;"><span class="sec-badge verified">ADMIN REQ</span></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><span class="endpoint-path">/api/admin/approve/:userId</span></td>
+              <td class="endpoint-desc">Approves a pending warehouse user, changing status to 'approved' (administrator restricted).</td>
+              <td style="text-align: right;"><span class="sec-badge verified">ADMIN REQ</span></td>
+            </tr>
           </tbody>
         </table>
       </div>

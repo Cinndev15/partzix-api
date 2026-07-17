@@ -26,6 +26,15 @@ const swaggerDefinition = {
       description: 'Servidor de Producción',
     }
   ],
+  components: {
+    securitySchemes: {
+      bearerAuth: {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+      }
+    }
+  }
 };
 
 const options = {

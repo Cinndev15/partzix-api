@@ -171,7 +171,8 @@ async function registerWarehouse(req, res, next) {
         id: result.insertId,
         identification_number,
         name,
-        email
+        email,
+        status: 'Por Aprobar'
       }
     });
   } catch (error) {

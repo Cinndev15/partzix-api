@@ -21,6 +21,7 @@ CREATE TABLE `warehouses` (
   `website` VARCHAR(255) DEFAULT NULL,
   `email` VARCHAR(150) NOT NULL UNIQUE,
   `is_email_verified` BOOLEAN DEFAULT FALSE,
+  `status` ENUM('Por Aprobar', 'Aprobado', 'Negado') DEFAULT 'Por Aprobar',
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX `idx_email` (`email`),

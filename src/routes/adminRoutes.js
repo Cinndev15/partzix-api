@@ -1,5 +1,5 @@
 const express = require('express');
-const { getPendingWarehouses, approveWarehouse, getAllWarehouses } = require('../controllers/adminController');
+const { getPendingWarehouses, updateWarehouseStatus, getAllWarehouses } = require('../controllers/adminController');
 const { authenticateToken, requireRole } = require('../middlewares/authMiddleware');
 
 const router = express.Router();
@@ -33,7 +33,7 @@ router.get('/warehouses', getAllWarehouses);
  * /api/admin/pending:
  *   get:
  *     summary: Obtiene la lista de almacenes pendientes de aprobación (Solo Admin)
- *     description: Lista todos los almacenes registrados que se encuentran esperando aprobación del administrador de la aplicación. Requiere token Bearer JWT de administrador.
+ *     description: Lista todos los almacenes registrados que se encuentran esperando aprobación del administrador de la aplicación (estado 'Por Aprobar'). Requiere token Bearer JWT de administrador.
  *     tags:
  *       - Administración
  *     security:
@@ -50,33 +50,46 @@ router.get('/pending', getPendingWarehouses);
 
 /**
  * @openapi
- * /api/admin/approve/{userId}:
+ * /api/admin/warehouses/{warehouseId}/status:
  *   post:
- *     summary: Aprueba la cuenta de un almacén pendiente (Solo Admin)
- *     description: Activa el estado del usuario del almacén a 'approved', lo que le permite iniciar sesión. Requiere token Bearer JWT de administrador.
+ *     summary: Actualiza el estado de aprobación de un almacén (Solo Admin)
+ *     description: Permite al administrador aprobar o rechazar (negar) la solicitud de registro de un almacén. Al cambiar de estado, sincroniza el estado de acceso de su cuenta de usuario vinculada. Requiere token Bearer JWT de administrador.
  *     tags:
  *       - Administración
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: userId
+ *         name: warehouseId
  *         required: true
  *         schema:
  *           type: integer
- *         description: ID del usuario almacén a aprobar.
+ *         description: ID del almacén a actualizar.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - status
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: ["Aprobado", "Negado"]
+ *                 example: "Aprobado"
  *     responses:
  *       200:
- *         description: Almacén aprobado con éxito.
+ *         description: Estado actualizado con éxito.
  *       400:
- *         description: El usuario ya está aprobado o no es del rol almacén.
+ *         description: Estado provisto no válido.
  *       401:
  *         description: No autenticado.
  *       403:
  *         description: No autorizado.
  *       404:
- *         description: Usuario no encontrado.
+ *         description: Almacén no encontrado.
  */
-router.post('/approve/:userId', approveWarehouse);
+router.post('/warehouses/:warehouseId/status', updateWarehouseStatus);
 
 module.exports = router;

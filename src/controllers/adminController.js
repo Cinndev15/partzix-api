@@ -7,10 +7,6 @@ async function getPendingWarehouses(req, res, next) {
   try {
     const query = `
       SELECT 
-        u.id as user_id, 
-        u.email, 
-        u.status, 
-        u.created_at as registration_date,
         w.id as warehouse_id,
         w.identification_number,
         w.name as business_name,
@@ -21,11 +17,16 @@ async function getPendingWarehouses(req, res, next) {
         w.phone,
         w.contact_person,
         w.user_class,
-        w.website
-      FROM users u
-      INNER JOIN warehouses w ON u.warehouse_id = w.id
-      WHERE u.role = 'warehouse' AND u.status = 'pending'
-      ORDER BY u.created_at ASC
+        w.website,
+        w.email,
+        w.status,
+        w.created_at as registration_date,
+        u.id as user_id,
+        u.email as user_email
+      FROM warehouses w
+      LEFT JOIN users u ON u.warehouse_id = w.id
+      WHERE w.status = 'Por Aprobar'
+      ORDER BY w.created_at ASC
     `;
 
     const [rows] = await pool.query(query);
@@ -40,44 +41,45 @@ async function getPendingWarehouses(req, res, next) {
 }
 
 /**
- * Approve a pending warehouse
+ * Update the status of a registered warehouse (Approve/Deny)
  */
-async function approveWarehouse(req, res, next) {
-  const { userId } = req.params;
+async function updateWarehouseStatus(req, res, next) {
+  const { warehouseId } = req.params;
+  const { status } = req.body;
 
   try {
-    // 1. Verify user exists and is pending
-    const [users] = await pool.query('SELECT id, role, status FROM users WHERE id = ?', [userId]);
+    // Validate status parameter
+    const allowedStatuses = ['Aprobado', 'Negado'];
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Estado inválido. Debe ser "Aprobado" o "Negado".'
+      });
+    }
 
-    if (users.length === 0) {
+    // 1. Verify warehouse exists
+    const [warehouses] = await pool.query('SELECT id, status FROM warehouses WHERE id = ?', [warehouseId]);
+    if (warehouses.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Usuario no encontrado.'
+        message: 'Almacén no encontrado.'
       });
     }
 
-    const user = users[0];
+    // 2. Update status in warehouses table
+    await pool.query('UPDATE warehouses SET status = ? WHERE id = ?', [status, warehouseId]);
 
-    if (user.role !== 'warehouse') {
-      return res.status(400).json({
-        success: false,
-        message: 'El usuario especificado no es un almacén.'
-      });
-    }
-
-    if (user.status === 'approved') {
-      return res.status(400).json({
-        success: false,
-        message: 'El almacén ya se encuentra aprobado.'
-      });
-    }
-
-    // 2. Approve warehouse
-    await pool.query("UPDATE users SET status = 'approved' WHERE id = ?", [userId]);
+    // 3. Keep linked user status in sync (if exists)
+    const userStatus = status === 'Aprobado' ? 'approved' : 'suspended';
+    await pool.query('UPDATE users SET status = ? WHERE warehouse_id = ?', [userStatus, warehouseId]);
 
     return res.status(200).json({
       success: true,
-      message: 'El almacén ha sido aprobado con éxito. Ahora puede iniciar sesión.'
+      message: `El estado del almacén ha sido actualizado a "${status}" con éxito.`,
+      data: {
+        warehouse_id: parseInt(warehouseId),
+        status
+      }
     });
   } catch (error) {
     next(error);
@@ -103,8 +105,8 @@ async function getAllWarehouses(req, res, next) {
         w.user_class,
         w.website,
         w.email,
+        w.status,
         w.created_at as registration_date,
-        COALESCE(u.status, 'pending') as status,
         u.id as user_id
       FROM warehouses w
       LEFT JOIN users u ON u.warehouse_id = w.id
@@ -124,6 +126,6 @@ async function getAllWarehouses(req, res, next) {
 
 module.exports = {
   getPendingWarehouses,
-  approveWarehouse,
+  updateWarehouseStatus,
   getAllWarehouses
 };

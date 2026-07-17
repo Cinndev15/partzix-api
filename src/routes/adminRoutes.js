@@ -1,5 +1,5 @@
 const express = require('express');
-const { getPendingWarehouses, approveWarehouse } = require('../controllers/adminController');
+const { getPendingWarehouses, approveWarehouse, getAllWarehouses } = require('../controllers/adminController');
 const { authenticateToken, requireRole } = require('../middlewares/authMiddleware');
 
 const router = express.Router();
@@ -7,6 +7,26 @@ const router = express.Router();
 // Apply authentication and admin role verification globally to all admin routes
 router.use(authenticateToken);
 router.use(requireRole('admin'));
+
+/**
+ * @openapi
+ * /api/admin/warehouses:
+ *   get:
+ *     summary: Obtiene la lista de todos los almacenes registrados (Solo Admin)
+ *     description: Retorna un listado completo de los almacenes creados en la base de datos junto con su estado de aprobación. Requiere token Bearer JWT de administrador.
+ *     tags:
+ *       - Administración
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Listado obtenido con éxito.
+ *       401:
+ *         description: No autenticado.
+ *       403:
+ *         description: No autorizado.
+ */
+router.get('/warehouses', getAllWarehouses);
 
 /**
  * @openapi

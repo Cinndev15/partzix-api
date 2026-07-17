@@ -84,7 +84,46 @@ async function approveWarehouse(req, res, next) {
   }
 }
 
+/**
+ * Get all registered warehouses with status
+ */
+async function getAllWarehouses(req, res, next) {
+  try {
+    const query = `
+      SELECT 
+        w.id as warehouse_id,
+        w.identification_number,
+        w.name as business_name,
+        w.address,
+        w.country,
+        w.department,
+        w.city,
+        w.phone,
+        w.contact_person,
+        w.user_class,
+        w.website,
+        w.email,
+        w.created_at as registration_date,
+        COALESCE(u.status, 'pending') as status,
+        u.id as user_id
+      FROM warehouses w
+      LEFT JOIN users u ON u.warehouse_id = w.id
+      ORDER BY w.created_at DESC
+    `;
+
+    const [rows] = await pool.query(query);
+
+    return res.status(200).json({
+      success: true,
+      data: rows
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   getPendingWarehouses,
-  approveWarehouse
+  approveWarehouse,
+  getAllWarehouses
 };

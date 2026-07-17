@@ -22,9 +22,19 @@ async function getPendingWarehouses(req, res, next) {
         w.status,
         w.created_at as registration_date,
         u.id as user_id,
-        u.email as user_email
+        u.email as user_email,
+        p.short_name,
+        p.advisor_phone,
+        p.advisor_whatsapp,
+        p.description,
+        p.logo_path,
+        p.rut_doc_path,
+        p.id_doc_path,
+        p.chamber_of_commerce_doc_path,
+        p.registrar_name
       FROM warehouses w
       LEFT JOIN users u ON u.warehouse_id = w.id
+      LEFT JOIN provider_profiles p ON p.warehouse_id = w.id
       WHERE w.status = 'Por Aprobar'
       ORDER BY w.created_at ASC
     `;
@@ -107,9 +117,19 @@ async function getAllWarehouses(req, res, next) {
         w.email,
         w.status,
         w.created_at as registration_date,
-        u.id as user_id
+        u.id as user_id,
+        p.short_name,
+        p.advisor_phone,
+        p.advisor_whatsapp,
+        p.description,
+        p.logo_path,
+        p.rut_doc_path,
+        p.id_doc_path,
+        p.chamber_of_commerce_doc_path,
+        p.registrar_name
       FROM warehouses w
       LEFT JOIN users u ON u.warehouse_id = w.id
+      LEFT JOIN provider_profiles p ON p.warehouse_id = w.id
       ORDER BY w.created_at DESC
     `;
 

@@ -180,8 +180,92 @@ async function registerWarehouse(req, res, next) {
   }
 }
 
+/**
+ * Get warehouse profile
+ */
+async function getWarehouseProfile(req, res, next) {
+  const warehouseId = req.user.warehouse_id;
+
+  try {
+    const [rows] = await pool.query('SELECT * FROM warehouses WHERE id = ?', [warehouseId]);
+    if (rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Almacén no encontrado.'
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: rows[0]
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Update warehouse profile
+ */
+async function updateWarehouseProfile(req, res, next) {
+  const warehouseId = req.user.warehouse_id;
+  const {
+    name,
+    address,
+    country,
+    department,
+    city,
+    phone,
+    contact_person,
+    user_class,
+    website
+  } = req.body;
+
+  try {
+    const [existing] = await pool.query('SELECT id FROM warehouses WHERE id = ?', [warehouseId]);
+    if (existing.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Almacén no encontrado.'
+      });
+    }
+
+    const updateQuery = `
+      UPDATE warehouses
+      SET name = ?, address = ?, country = ?, department = ?, city = ?, phone = ?,
+          contact_person = ?, user_class = ?, website = ?
+      WHERE id = ?
+    `;
+
+    await pool.query(updateQuery, [
+      name,
+      address,
+      country || 'Colombia',
+      department,
+      city,
+      phone || null,
+      contact_person || null,
+      user_class,
+      website || null,
+      warehouseId
+    ]);
+
+    const [updated] = await pool.query('SELECT * FROM warehouses WHERE id = ?', [warehouseId]);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Perfil del almacén actualizado con éxito.',
+      data: updated[0]
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   sendOtp,
   verifyOtp,
-  registerWarehouse
+  registerWarehouse,
+  getWarehouseProfile,
+  updateWarehouseProfile
 };

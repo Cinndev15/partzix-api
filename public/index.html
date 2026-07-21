@@ -536,6 +536,42 @@
               <td class="endpoint-desc">Creates a warehouse login user account for a previously approved warehouse (administrator restricted).</td>
               <td style="text-align: right;"><span class="sec-badge verified">ADMIN REQ</span></td>
             </tr>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><span class="endpoint-path">/api/categories</span></td>
+              <td class="endpoint-desc">Creates a new product category (administrator restricted).</td>
+              <td style="text-align: right;"><span class="sec-badge verified">ADMIN REQ</span></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge get">GET</span></td>
+              <td><span class="endpoint-path">/api/categories</span></td>
+              <td class="endpoint-desc">Retrieves list of all product categories.</td>
+              <td style="text-align: right;"><span class="sec-badge public">PUBLIC</span></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><span class="endpoint-path">/api/lines</span></td>
+              <td class="endpoint-desc">Creates a new product line under a category (administrator restricted).</td>
+              <td style="text-align: right;"><span class="sec-badge verified">ADMIN REQ</span></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge get">GET</span></td>
+              <td><span class="endpoint-path">/api/lines</span></td>
+              <td class="endpoint-desc">Retrieves list of all product lines (optional categoryId filter).</td>
+              <td style="text-align: right;"><span class="sec-badge public">PUBLIC</span></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge post">POST</span></td>
+              <td><span class="endpoint-path">/api/sublines</span></td>
+              <td class="endpoint-desc">Creates a new product subline under a line (administrator restricted).</td>
+              <td style="text-align: right;"><span class="sec-badge verified">ADMIN REQ</span></td>
+            </tr>
+            <tr>
+              <td><span class="method-badge get">GET</span></td>
+              <td><span class="endpoint-path">/api/sublines</span></td>
+              <td class="endpoint-desc">Retrieves list of all product sublines (optional lineId filter).</td>
+              <td style="text-align: right;"><span class="sec-badge public">PUBLIC</span></td>
+            </tr>
           </tbody>
         </table>
       </div>

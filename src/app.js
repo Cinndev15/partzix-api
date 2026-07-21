@@ -6,6 +6,9 @@ const warehouseRoutes = require('./routes/warehouseRoutes');
 const providerRoutes = require('./routes/providerRoutes');
 const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const categoryRoutes = require('./routes/categoryRoutes');
+const lineRoutes = require('./routes/lineRoutes');
+const sublineRoutes = require('./routes/sublineRoutes');
 
 const path = require('path');
 const { swaggerUi, swaggerSpec } = require('./config/swagger');
@@ -94,6 +97,9 @@ app.use('/api/warehouses', warehouseRoutes);
 app.use('/api/providers', providerRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/lines', lineRoutes);
+app.use('/api/sublines', sublineRoutes);
 
 // 404 Route handler
 app.use((req, res, next) => {

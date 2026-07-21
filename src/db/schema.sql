@@ -1,4 +1,7 @@
 -- Drop tables if they exist in correct dependency order
+DROP TABLE IF EXISTS `sublines`;
+DROP TABLE IF EXISTS `lines`;
+DROP TABLE IF EXISTS `categories`;
 DROP TABLE IF EXISTS `password_resets`;
 DROP TABLE IF EXISTS `users`;
 DROP TABLE IF EXISTS `provider_profiles`;
@@ -94,4 +97,43 @@ VALUES ('admin@partzix.com', '$2b$10$QHRlHU2BreLqtBBumYD4FOG5obRG8VHUwgRZSQ0z/KK
 -- Insert new admin user (Password: Fergoga0803)
 INSERT INTO `users` (email, password_hash, role, status)
 VALUES ('fgonzalez@partzix.com', '$2b$10$FquFVfRK9YgEf8PyQOD3vebUzjhKPsqRgdwSJmsK8RDbQcXqUJkPG', 'admin', 'approved');
+
+-- Table structure for categories
+CREATE TABLE `categories` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `name` VARCHAR(100) NOT NULL UNIQUE,
+  `description` TEXT DEFAULT NULL,
+  `created_by` INT NOT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT `fk_category_creator` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table structure for lines
+CREATE TABLE `lines` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `category_id` INT NOT NULL,
+  `name` VARCHAR(100) NOT NULL,
+  `description` TEXT DEFAULT NULL,
+  `created_by` INT NOT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT `fk_line_category` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_line_creator` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE RESTRICT,
+  UNIQUE KEY `unique_category_line` (`category_id`, `name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table structure for sublines
+CREATE TABLE `sublines` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `line_id` INT NOT NULL,
+  `name` VARCHAR(100) NOT NULL,
+  `description` TEXT DEFAULT NULL,
+  `created_by` INT NOT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT `fk_subline_line` FOREIGN KEY (`line_id`) REFERENCES `lines` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_subline_creator` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE RESTRICT,
+  UNIQUE KEY `unique_line_subline` (`line_id`, `name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

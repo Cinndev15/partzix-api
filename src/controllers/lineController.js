@@ -25,7 +25,7 @@ async function createLine(req, res, next) {
     }
 
     // Check if line name already exists under this category
-    const [existing] = await pool.query('SELECT id FROM lines WHERE category_id = ? AND name = ?', [category_id, name]);
+    const [existing] = await pool.query('SELECT id FROM `lines` WHERE category_id = ? AND name = ?', [category_id, name]);
     if (existing.length > 0) {
       return res.status(400).json({
         success: false,
@@ -34,7 +34,7 @@ async function createLine(req, res, next) {
     }
 
     const [result] = await pool.query(
-      'INSERT INTO lines (category_id, name, description, created_by) VALUES (?, ?, ?, ?)',
+      'INSERT INTO `lines` (category_id, name, description, created_by) VALUES (?, ?, ?, ?)',
       [category_id, name, description || null, created_by]
     );
 
@@ -63,7 +63,7 @@ async function getLines(req, res, next) {
   try {
     let query = `
       SELECT l.id, l.category_id, c.name as category_name, l.name, l.description, l.created_at, l.updated_at, u.email as creator_email
-      FROM lines l
+      FROM \`lines\` l
       INNER JOIN categories c ON l.category_id = c.id
       INNER JOIN users u ON l.created_by = u.id
     `;
@@ -96,7 +96,7 @@ async function getLineById(req, res, next) {
   try {
     const query = `
       SELECT l.id, l.category_id, c.name as category_name, l.name, l.description, l.created_at, l.updated_at, u.email as creator_email
-      FROM lines l
+      FROM \`lines\` l
       INNER JOIN categories c ON l.category_id = c.id
       INNER JOIN users u ON l.created_by = u.id
       WHERE l.id = ?
@@ -135,7 +135,7 @@ async function updateLine(req, res, next) {
     }
 
     // Verify line exists
-    const [existing] = await pool.query('SELECT id, category_id FROM lines WHERE id = ?', [id]);
+    const [existing] = await pool.query('SELECT id, category_id FROM `lines` WHERE id = ?', [id]);
     if (existing.length === 0) {
       return res.status(404).json({
         success: false,
@@ -147,7 +147,7 @@ async function updateLine(req, res, next) {
 
     // Check if name is duplicate under the same category
     const [duplicate] = await pool.query(
-      'SELECT id FROM lines WHERE category_id = ? AND name = ? AND id != ?',
+      'SELECT id FROM `lines` WHERE category_id = ? AND name = ? AND id != ?',
       [category_id, name, id]
     );
     if (duplicate.length > 0) {
@@ -158,7 +158,7 @@ async function updateLine(req, res, next) {
     }
 
     await pool.query(
-      'UPDATE lines SET name = ?, description = ? WHERE id = ?',
+      'UPDATE `lines` SET name = ?, description = ? WHERE id = ?',
       [name, description || null, id]
     );
 
@@ -184,7 +184,7 @@ async function deleteLine(req, res, next) {
   const { id } = req.params;
 
   try {
-    const [existing] = await pool.query('SELECT id FROM lines WHERE id = ?', [id]);
+    const [existing] = await pool.query('SELECT id FROM `lines` WHERE id = ?', [id]);
     if (existing.length === 0) {
       return res.status(404).json({
         success: false,
@@ -192,7 +192,7 @@ async function deleteLine(req, res, next) {
       });
     }
 
-    await pool.query('DELETE FROM lines WHERE id = ?', [id]);
+    await pool.query('DELETE FROM `lines` WHERE id = ?', [id]);
 
     return res.status(200).json({
       success: true,

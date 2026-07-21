@@ -16,7 +16,7 @@ async function createSubline(req, res, next) {
     }
 
     // Verify line exists
-    const [line] = await pool.query('SELECT id FROM lines WHERE id = ?', [line_id]);
+    const [line] = await pool.query('SELECT id FROM `lines` WHERE id = ?', [line_id]);
     if (line.length === 0) {
       return res.status(404).json({
         success: false,
@@ -64,7 +64,7 @@ async function getSublines(req, res, next) {
     let query = `
       SELECT s.id, s.line_id, l.name as line_name, s.name, s.description, s.created_at, s.updated_at, u.email as creator_email
       FROM sublines s
-      INNER JOIN lines l ON s.line_id = l.id
+      INNER JOIN \`lines\` l ON s.line_id = l.id
       INNER JOIN users u ON s.created_by = u.id
     `;
     const params = [];
@@ -97,7 +97,7 @@ async function getSublineById(req, res, next) {
     const query = `
       SELECT s.id, s.line_id, l.name as line_name, s.name, s.description, s.created_at, s.updated_at, u.email as creator_email
       FROM sublines s
-      INNER JOIN lines l ON s.line_id = l.id
+      INNER JOIN \`lines\` l ON s.line_id = l.id
       INNER JOIN users u ON s.created_by = u.id
       WHERE s.id = ?
     `;

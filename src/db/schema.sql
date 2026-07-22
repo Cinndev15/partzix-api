@@ -1,4 +1,5 @@
 -- Drop tables if they exist in correct dependency order
+DROP TABLE IF EXISTS `product_brands`;
 DROP TABLE IF EXISTS `years`;
 DROP TABLE IF EXISTS `models`;
 DROP TABLE IF EXISTS `brands`;
@@ -182,5 +183,21 @@ CREATE TABLE `years` (
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT `fk_year_creator` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table structure for product_brands
+CREATE TABLE `product_brands` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `warehouse_id` INT NOT NULL,
+  `name` VARCHAR(100) NOT NULL,
+  `description` TEXT DEFAULT NULL,
+  `created_by` INT NOT NULL,
+  `updated_by` INT DEFAULT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT `fk_product_brand_warehouse` FOREIGN KEY (`warehouse_id`) REFERENCES `warehouses` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_product_brand_creator` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_product_brand_updater` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE RESTRICT,
+  UNIQUE KEY `unique_warehouse_product_brand` (`warehouse_id`, `name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

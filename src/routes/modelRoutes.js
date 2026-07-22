@@ -15,7 +15,7 @@ const router = express.Router();
  * /api/models:
  *   post:
  *     summary: Crea un nuevo modelo de vehículo (Solo Admin)
- *     description: Registra un nuevo modelo vinculado a una marca (ej. Mazda 3 bajo la marca Mazda). Requiere token Bearer JWT de administrador.
+ *     description: Registra un nuevo modelo vinculado tanto a una categoría como a una marca (ej. Mazda 3 bajo categoría Vehículos y marca Mazda). Requiere token Bearer JWT de administrador.
  *     tags:
  *       - Modelos
  *     security:
@@ -27,9 +27,13 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             required:
+ *               - category_id
  *               - brand_id
  *               - name
  *             properties:
+ *               category_id:
+ *                 type: integer
+ *                 example: 1
  *               brand_id:
  *                 type: integer
  *                 example: 1
@@ -43,19 +47,25 @@ const router = express.Router();
  *       201:
  *         description: Modelo creado con éxito.
  *       400:
- *         description: El nombre o ID de marca es requerido o duplicado.
+ *         description: Parámetros requeridos faltantes, la marca no corresponde a la categoría o modelo duplicado.
  *       401:
  *         description: No autenticado.
  *       403:
  *         description: No autorizado.
  *       404:
- *         description: La marca especificada no existe.
+ *         description: La categoría o marca especificada no existe.
  *   get:
  *     summary: Obtiene la lista de modelos
- *     description: Retorna un listado de todos los modelos registrados. Puede filtrarse por `brandId`. Endpoint público.
+ *     description: Retorna un listado de todos los modelos registrados. Puede filtrarse opcionalmente por `categoryId` y/`brandId`. Endpoint público.
  *     tags:
  *       - Modelos
  *     parameters:
+ *       - in: query
+ *         name: categoryId
+ *         required: false
+ *         schema:
+ *           type: integer
+ *         description: Filtra los modelos pertenecientes a una categoría específica.
  *       - in: query
  *         name: brandId
  *         required: false

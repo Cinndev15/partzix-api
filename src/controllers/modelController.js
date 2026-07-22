@@ -1,41 +1,53 @@
 const { pool } = require('../db/db');
 
 /**
- * Create a new model under a brand (Admin only)
+ * Create a new model under a brand and a category (Admin only)
  */
 async function createModel(req, res, next) {
-  const { brand_id, name, description } = req.body;
+  const { category_id, brand_id, name, description } = req.body;
   const created_by = req.user.id;
 
   try {
-    if (!brand_id || !name) {
+    if (!category_id || !brand_id || !name) {
       return res.status(400).json({
         success: false,
-        message: 'El ID de la marca y el nombre del modelo son requeridos.'
+        message: 'El ID de la categoría, el ID de la marca y el nombre del modelo son requeridos.'
       });
     }
 
-    // Verify brand exists
-    const [brand] = await pool.query('SELECT id FROM brands WHERE id = ?', [brand_id]);
-    if (brand.length === 0) {
+    // Verify category exists
+    const [category] = await pool.query('SELECT id FROM categories WHERE id = ?', [category_id]);
+    if (category.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'La marca especificada no existe.'
+        message: 'La categoría especificada no existe.'
       });
     }
 
-    // Check if model name already exists under this brand
-    const [existing] = await pool.query('SELECT id FROM models WHERE brand_id = ? AND name = ?', [brand_id, name]);
+    // Verify brand exists and is linked to the specified category
+    const [brand] = await pool.query('SELECT id FROM brands WHERE id = ? AND category_id = ?', [brand_id, category_id]);
+    if (brand.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'La marca especificada no existe o no está vinculada a la categoría provista.'
+      });
+    }
+
+    // Check if model name already exists under this category and brand
+    const [existing] = await pool.query(
+      'SELECT id FROM models WHERE category_id = ? AND brand_id = ? AND name = ?',
+      [category_id, brand_id, name]
+    );
     if (existing.length > 0) {
       return res.status(400).json({
         success: false,
-        message: 'Ya existe un modelo con este nombre bajo esta marca.'
+        message: 'Ya existe un modelo con este nombre para esta marca y categoría.'
       });
     }
 
     const [result] = await pool.query(
-      'INSERT INTO models (brand_id, name, description, created_by) VALUES (?, ?, ?, ?)',
-      [brand_id, name, description || null, created_by]
+      'INSERT INTO models (category_id, brand_id, name, description, created_by) VALUES (?, ?, ?, ?, ?)',
+      [category_id, brand_id, name, description || null, created_by]
     );
 
     return res.status(201).json({
@@ -43,6 +55,7 @@ async function createModel(req, res, next) {
       message: 'Modelo creado con éxito.',
       data: {
         id: result.insertId,
+        category_id,
         brand_id,
         name,
         description,
@@ -55,25 +68,37 @@ async function createModel(req, res, next) {
 }
 
 /**
- * Get all models (optional query filter by brandId)
+ * Get all models (optional query filters by categoryId and brandId)
  */
 async function getModels(req, res, next) {
-  const { brandId } = req.query;
+  const { categoryId, brandId } = req.query;
 
   try {
     let query = `
-      SELECT m.id, m.brand_id, b.name as brand_name, m.name, m.description, m.created_at, m.updated_at, 
+      SELECT m.id, m.category_id, c.name as category_name, m.brand_id, b.name as brand_name, 
+             m.name, m.description, m.created_at, m.updated_at, 
              u1.email as creator_email, u2.email as updater_email
       FROM models m
+      INNER JOIN categories c ON m.category_id = c.id
       INNER JOIN brands b ON m.brand_id = b.id
       INNER JOIN users u1 ON m.created_by = u1.id
       LEFT JOIN users u2 ON m.updated_by = u2.id
     `;
     const params = [];
+    const whereClauses = [];
+
+    if (categoryId) {
+      whereClauses.push(`m.category_id = ?`);
+      params.push(categoryId);
+    }
 
     if (brandId) {
-      query += ` WHERE m.brand_id = ?`;
+      whereClauses.push(`m.brand_id = ?`);
       params.push(brandId);
+    }
+
+    if (whereClauses.length > 0) {
+      query += ` WHERE ` + whereClauses.join(' AND ');
     }
 
     query += ` ORDER BY m.name ASC`;
@@ -97,9 +122,11 @@ async function getModelById(req, res, next) {
 
   try {
     const query = `
-      SELECT m.id, m.brand_id, b.name as brand_name, m.name, m.description, m.created_at, m.updated_at, 
+      SELECT m.id, m.category_id, c.name as category_name, m.brand_id, b.name as brand_name, 
+             m.name, m.description, m.created_at, m.updated_at, 
              u1.email as creator_email, u2.email as updater_email
       FROM models m
+      INNER JOIN categories c ON m.category_id = c.id
       INNER JOIN brands b ON m.brand_id = b.id
       INNER JOIN users u1 ON m.created_by = u1.id
       LEFT JOIN users u2 ON m.updated_by = u2.id
@@ -140,7 +167,7 @@ async function updateModel(req, res, next) {
     }
 
     // Verify model exists
-    const [existing] = await pool.query('SELECT id, brand_id FROM models WHERE id = ?', [id]);
+    const [existing] = await pool.query('SELECT id, category_id, brand_id FROM models WHERE id = ?', [id]);
     if (existing.length === 0) {
       return res.status(404).json({
         success: false,
@@ -148,17 +175,17 @@ async function updateModel(req, res, next) {
       });
     }
 
-    const { brand_id } = existing[0];
+    const { category_id, brand_id } = existing[0];
 
-    // Check if name is duplicate under the same brand
+    // Check if name is duplicate under the same category and brand
     const [duplicate] = await pool.query(
-      'SELECT id FROM models WHERE brand_id = ? AND name = ? AND id != ?',
-      [brand_id, name, id]
+      'SELECT id FROM models WHERE category_id = ? AND brand_id = ? AND name = ? AND id != ?',
+      [category_id, brand_id, name, id]
     );
     if (duplicate.length > 0) {
       return res.status(400).json({
         success: false,
-        message: 'Ya existe otro modelo con este nombre bajo esta marca.'
+        message: 'Ya existe otro modelo con este nombre bajo la misma marca y categoría.'
       });
     }
 
@@ -172,6 +199,7 @@ async function updateModel(req, res, next) {
       message: 'Modelo actualizado con éxito.',
       data: {
         id: parseInt(id),
+        category_id,
         brand_id,
         name,
         description,

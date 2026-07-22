@@ -95,7 +95,7 @@ async function sendUserApprovalEmail(email, password) {
     console.log(`📧 [EMAIL MOCK] Sending User Credentials to: ${email}`);
     console.log(`🔑 Password: ${password}`);
     console.log(`======================================================\n`);
-    return true;
+    return { success: true, mock: true };
   }
 
   try {
@@ -105,13 +105,13 @@ async function sendUserApprovalEmail(email, password) {
       subject,
       html: htmlContent,
     });
-    return true;
+    return { success: true };
   } catch (error) {
     console.error('❌ Error sending user approval email:', error.message);
     if (process.env.NODE_ENV !== 'production') {
       console.log(`📧 [FALLBACK EMAIL LOG] Credentials for ${email} -> Password: ${password}`);
     }
-    return false;
+    return { success: false, error: error.message };
   }
 }
 

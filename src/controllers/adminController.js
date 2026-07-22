@@ -204,14 +204,18 @@ async function createWarehouseUser(req, res, next) {
     );
 
     // Send credentials email to the warehouse
-    await sendUserApprovalEmail(email, password);
+    const emailResult = await sendUserApprovalEmail(email, password);
 
     return res.status(201).json({
       success: true,
-      message: 'Usuario creado con éxito para el almacén.',
+      message: emailResult.success 
+        ? 'Usuario creado con éxito y correo de credenciales enviado.' 
+        : `Usuario creado con éxito, pero falló el envío del correo: ${emailResult.error}`,
       data: {
         user_id: result.insertId,
-        email
+        email,
+        email_sent: emailResult.success,
+        email_error: emailResult.error || null
       }
     });
   } catch (error) {

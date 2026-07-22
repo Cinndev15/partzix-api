@@ -1,4 +1,5 @@
 -- Drop tables if they exist in correct dependency order
+DROP TABLE IF EXISTS `years`;
 DROP TABLE IF EXISTS `models`;
 DROP TABLE IF EXISTS `brands`;
 DROP TABLE IF EXISTS `sublines`;
@@ -171,5 +172,15 @@ CREATE TABLE `models` (
   CONSTRAINT `fk_model_creator` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE RESTRICT,
   CONSTRAINT `fk_model_updater` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE RESTRICT,
   UNIQUE KEY `unique_category_brand_model` (`category_id`, `brand_id`, `name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table structure for years
+CREATE TABLE `years` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `year` INT NOT NULL UNIQUE,
+  `created_by` INT NOT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT `fk_year_creator` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

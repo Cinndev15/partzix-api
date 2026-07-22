@@ -74,8 +74,14 @@ async function sendVerificationCode(email, code) {
 async function sendUserApprovalEmail(email, password) {
   const from = process.env.SMTP_FROM || 'Partzix <soporte@partzix.com>';
   const subject = 'Solicitud Aprobada - Cuenta de Acceso Partzix';
+  const baseServerUrl = process.env.SMTP_HOST ? 'https://api.partzix.com' : 'http://localhost:3000';
+  const logoUrl = `${baseServerUrl}/PARTZIX-AZUL.png`;
+  
   const htmlContent = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #f0f0f0; border-radius: 8px;">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <img src="${logoUrl}" alt="Partzix" style="height: 60px; width: auto; object-fit: contain;" />
+      </div>
       <h2 style="color: #ff6600; text-align: center;">¡Solicitud Aprobada!</h2>
       <p>Hola,</p>
       <p>Nos complace informarte que tu solicitud para formar parte de la plataforma de <strong>Partzix</strong> ha sido aprobada con éxito.</p>
@@ -86,7 +92,7 @@ async function sendUserApprovalEmail(email, password) {
       </div>
       <p>Te recomendamos iniciar sesión y cambiar tu contraseña por seguridad.</p>
       <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-      <p style="text-align: center; font-size: 12px; color: #999;">&copy; ${new Date().getFullYear()} Partzix. Todos los derechos reservados.</p>
+      <p style="text-align: center; font-size: 12px; color: #999;">&copy; ${new Date().getFullYear()} CINNDEV SAS. Todos los derechos reservados. PARTZIX es una marca de CINNDEV SAS.</p>
     </div>
   `;
 

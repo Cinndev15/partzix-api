@@ -65,6 +65,57 @@ async function sendVerificationCode(email, code) {
   }
 }
 
+/**
+ * Sends an approval and credentials email to the warehouse
+ * @param {string} email - Destination email address
+ * @param {string} password - Temporary password assigned
+ * @returns {Promise<boolean>} - True if sent, false otherwise
+ */
+async function sendUserApprovalEmail(email, password) {
+  const from = process.env.SMTP_FROM || 'Partzix <soporte@partzix.com>';
+  const subject = 'Solicitud Aprobada - Cuenta de Acceso Partzix';
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #f0f0f0; border-radius: 8px;">
+      <h2 style="color: #ff6600; text-align: center;">¡Solicitud Aprobada!</h2>
+      <p>Hola,</p>
+      <p>Nos complace informarte que tu solicitud para formar parte de la plataforma de <strong>Partzix</strong> ha sido aprobada con éxito.</p>
+      <p>Se ha creado tu cuenta de usuario. A continuación, encontrarás tus credenciales asignadas para iniciar sesión:</p>
+      <div style="background-color: #f7f7f7; padding: 15px; border-radius: 8px; border: 1px solid #eee; margin: 20px 0; font-size: 15px;">
+        <p style="margin: 5px 0;"><strong>Usuario/Correo:</strong> ${email}</p>
+        <p style="margin: 5px 0;"><strong>Contraseña temporal:</strong> ${password}</p>
+      </div>
+      <p>Te recomendamos iniciar sesión y cambiar tu contraseña por seguridad.</p>
+      <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+      <p style="text-align: center; font-size: 12px; color: #999;">&copy; ${new Date().getFullYear()} Partzix. Todos los derechos reservados.</p>
+    </div>
+  `;
+
+  if (!transporter) {
+    console.log(`\n======================================================`);
+    console.log(`📧 [EMAIL MOCK] Sending User Credentials to: ${email}`);
+    console.log(`🔑 Password: ${password}`);
+    console.log(`======================================================\n`);
+    return true;
+  }
+
+  try {
+    await transporter.sendMail({
+      from,
+      to: email,
+      subject,
+      html: htmlContent,
+    });
+    return true;
+  } catch (error) {
+    console.error('❌ Error sending user approval email:', error.message);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`📧 [FALLBACK EMAIL LOG] Credentials for ${email} -> Password: ${password}`);
+    }
+    return false;
+  }
+}
+
 module.exports = {
   sendVerificationCode,
+  sendUserApprovalEmail,
 };

@@ -1,4 +1,5 @@
 const { pool } = require('../db/db');
+const { sendUserApprovalEmail } = require('../services/mailService');
 
 /**
  * Get all warehouses pending approval
@@ -201,6 +202,9 @@ async function createWarehouseUser(req, res, next) {
       'INSERT INTO users (email, password_hash, role, status, warehouse_id) VALUES (?, ?, "warehouse", "approved", ?)',
       [email, passwordHash, warehouseId]
     );
+
+    // Send credentials email to the warehouse
+    await sendUserApprovalEmail(email, password);
 
     return res.status(201).json({
       success: true,

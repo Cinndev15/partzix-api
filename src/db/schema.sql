@@ -1,5 +1,12 @@
--- Drop tables if they exist in correct dependency order
+DROP TABLE IF EXISTS `product_images`;
+DROP TABLE IF EXISTS `product_taxes`;
+DROP TABLE IF EXISTS `product_models`;
+DROP TABLE IF EXISTS `product_years`;
+DROP TABLE IF EXISTS `product_displacements`;
+DROP TABLE IF EXISTS `products`;
+DROP TABLE IF EXISTS `taxes`;
 DROP TABLE IF EXISTS `product_brands`;
+DROP TABLE IF EXISTS `displacements`;
 DROP TABLE IF EXISTS `years`;
 DROP TABLE IF EXISTS `models`;
 DROP TABLE IF EXISTS `brands`;
@@ -199,5 +206,123 @@ CREATE TABLE `product_brands` (
   CONSTRAINT `fk_product_brand_creator` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE RESTRICT,
   CONSTRAINT `fk_product_brand_updater` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE RESTRICT,
   UNIQUE KEY `unique_warehouse_product_brand` (`warehouse_id`, `name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table structure for displacements
+CREATE TABLE `displacements` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `category_id` INT NOT NULL,
+  `displacement` VARCHAR(50) NOT NULL,
+  `description` TEXT DEFAULT NULL,
+  `created_by` INT NOT NULL,
+  `updated_by` INT DEFAULT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT `fk_displacement_category` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_displacement_creator` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_displacement_updater` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE RESTRICT,
+  UNIQUE KEY `unique_category_displacement` (`category_id`, `displacement`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table structure for taxes
+CREATE TABLE `taxes` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `name` VARCHAR(100) NOT NULL UNIQUE,
+  `rate_percent` DECIMAL(5,2) NOT NULL,
+  `description` TEXT DEFAULT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Seed default taxes
+INSERT INTO `taxes` (name, rate_percent, description) VALUES
+('IVA 19%', 19.00, 'Impuesto sobre el Valor Añadido general del 19%'),
+('IVA 5%', 5.00, 'Impuesto sobre el Valor Añadido reducido del 5%'),
+('Exento', 0.00, 'Exento de Impuestos');
+
+-- Table structure for products
+CREATE TABLE `products` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `warehouse_id` INT NOT NULL,
+  `sku` VARCHAR(100) NOT NULL,
+  `commercial_name` VARCHAR(255) NOT NULL,
+  `factory_reference` VARCHAR(255) DEFAULT NULL,
+  `stock_units` INT NOT NULL DEFAULT 0,
+  `purchase_price` DECIMAL(12,2) NOT NULL,
+  `profit_percent` DECIMAL(5,2) NOT NULL,
+  `sale_price` DECIMAL(12,2) NOT NULL,
+  `product_brand_id` INT DEFAULT NULL,
+  `category_id` INT NOT NULL,
+  `line_id` INT DEFAULT NULL,
+  `subline_id` INT DEFAULT NULL,
+  `provider_profile_id` INT DEFAULT NULL,
+  `consecutive_code` VARCHAR(50) NOT NULL,
+  `physical_condition` VARCHAR(100) DEFAULT 'Nuevo (Garantizado)',
+  `status` VARCHAR(100) DEFAULT 'Activo (Visible en tienda)',
+  `is_featured` BOOLEAN DEFAULT FALSE,
+  `spare_part_type` VARCHAR(100) DEFAULT 'Genérico',
+  `mechanical_position` VARCHAR(100) DEFAULT NULL,
+  `vehicle_side` VARCHAR(100) DEFAULT NULL,
+  `compatible_transmission_type` VARCHAR(100) DEFAULT NULL,
+  `technical_description` TEXT DEFAULT NULL,
+  `created_by` INT NOT NULL,
+  `updated_by` INT DEFAULT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT `fk_product_warehouse` FOREIGN KEY (`warehouse_id`) REFERENCES `warehouses` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_product_product_brand` FOREIGN KEY (`product_brand_id`) REFERENCES `product_brands` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_product_category` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_product_line` FOREIGN KEY (`line_id`) REFERENCES `lines` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_product_subline` FOREIGN KEY (`subline_id`) REFERENCES `sublines` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_product_provider` FOREIGN KEY (`provider_profile_id`) REFERENCES `provider_profiles` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_product_creator` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_product_updater` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE RESTRICT,
+  UNIQUE KEY `unique_warehouse_sku` (`warehouse_id`, `sku`),
+  UNIQUE KEY `unique_consecutive_code` (`consecutive_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table structure for product_models (Compatibility)
+CREATE TABLE `product_models` (
+  `product_id` INT NOT NULL,
+  `model_id` INT NOT NULL,
+  PRIMARY KEY (`product_id`, `model_id`),
+  CONSTRAINT `fk_pm_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_pm_model` FOREIGN KEY (`model_id`) REFERENCES `models` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table structure for product_years (Compatibility)
+CREATE TABLE `product_years` (
+  `product_id` INT NOT NULL,
+  `year_id` INT NOT NULL,
+  PRIMARY KEY (`product_id`, `year_id`),
+  CONSTRAINT `fk_py_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_py_year` FOREIGN KEY (`year_id`) REFERENCES `years` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table structure for product_displacements (Compatibility)
+CREATE TABLE `product_displacements` (
+  `product_id` INT NOT NULL,
+  `displacement_id` INT NOT NULL,
+  PRIMARY KEY (`product_id`, `displacement_id`),
+  CONSTRAINT `fk_pd_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_pd_displacement` FOREIGN KEY (`displacement_id`) REFERENCES `displacements` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table structure for product_taxes (Applicable taxes)
+CREATE TABLE `product_taxes` (
+  `product_id` INT NOT NULL,
+  `tax_id` INT NOT NULL,
+  PRIMARY KEY (`product_id`, `tax_id`),
+  CONSTRAINT `fk_pt_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_pt_tax` FOREIGN KEY (`tax_id`) REFERENCES `taxes` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table structure for product_images
+CREATE TABLE `product_images` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `product_id` INT NOT NULL,
+  `image_path` VARCHAR(255) NOT NULL,
+  `is_main` BOOLEAN DEFAULT FALSE,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT `fk_pi_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

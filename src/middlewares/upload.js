@@ -54,6 +54,9 @@ const uploadFields = upload.fields([
   { name: 'chamber_of_commerce_doc', maxCount: 1 }
 ]);
 
+const uploadProductImages = upload.array('images', 10);
+
 module.exports = {
-  uploadFields
+  uploadFields,
+  uploadProductImages
 };

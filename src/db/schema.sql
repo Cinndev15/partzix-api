@@ -1,27 +1,6 @@
-DROP TABLE IF EXISTS `product_images`;
-DROP TABLE IF EXISTS `product_taxes`;
-DROP TABLE IF EXISTS `product_models`;
-DROP TABLE IF EXISTS `product_years`;
-DROP TABLE IF EXISTS `product_displacements`;
-DROP TABLE IF EXISTS `products`;
-DROP TABLE IF EXISTS `taxes`;
-DROP TABLE IF EXISTS `product_brands`;
-DROP TABLE IF EXISTS `displacements`;
-DROP TABLE IF EXISTS `years`;
-DROP TABLE IF EXISTS `models`;
-DROP TABLE IF EXISTS `brands`;
-DROP TABLE IF EXISTS `sublines`;
-DROP TABLE IF EXISTS `lines`;
-DROP TABLE IF EXISTS `categories`;
-DROP TABLE IF EXISTS `password_resets`;
-DROP TABLE IF EXISTS `users`;
-DROP TABLE IF EXISTS `provider_profiles`;
-DROP TABLE IF EXISTS `warehouses`;
-DROP TABLE IF EXISTS `email_verifications`;
-DROP TABLE IF EXISTS `phone_verifications`;
 
 -- Table structure for warehouses
-CREATE TABLE `warehouses` (
+CREATE TABLE IF NOT EXISTS `warehouses` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `identification_number` VARCHAR(50) NOT NULL UNIQUE,
   `name` VARCHAR(150) NOT NULL,
@@ -43,7 +22,7 @@ CREATE TABLE `warehouses` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Table structure for email verifications (OTP)
-CREATE TABLE `email_verifications` (
+CREATE TABLE IF NOT EXISTS `email_verifications` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `email` VARCHAR(150) NOT NULL,
   `code` VARCHAR(6) NOT NULL,
@@ -55,7 +34,7 @@ CREATE TABLE `email_verifications` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Table structure for provider profiles (Step 2 configuration)
-CREATE TABLE `provider_profiles` (
+CREATE TABLE IF NOT EXISTS `provider_profiles` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `warehouse_id` INT NOT NULL UNIQUE,
   `short_name` VARCHAR(100) NOT NULL,
@@ -79,7 +58,7 @@ CREATE TABLE `provider_profiles` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Table structure for users (Authentication & Roles)
-CREATE TABLE `users` (
+CREATE TABLE IF NOT EXISTS `users` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `email` VARCHAR(150) NOT NULL UNIQUE,
   `password_hash` VARCHAR(255) NOT NULL,
@@ -92,7 +71,7 @@ CREATE TABLE `users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Table structure for password resets
-CREATE TABLE `password_resets` (
+CREATE TABLE IF NOT EXISTS `password_resets` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `email` VARCHAR(150) NOT NULL,
   `token` VARCHAR(100) NOT NULL,
@@ -102,15 +81,15 @@ CREATE TABLE `password_resets` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Insert default admin user (Password: AdminPartzix2026!)
-INSERT INTO `users` (email, password_hash, role, status)
+INSERT IGNORE INTO `users` (email, password_hash, role, status)
 VALUES ('admin@partzix.com', '$2b$10$QHRlHU2BreLqtBBumYD4FOG5obRG8VHUwgRZSQ0z/KKDhMTPsny0y', 'admin', 'approved');
 
 -- Insert new admin user (Password: Fergoga0803)
-INSERT INTO `users` (email, password_hash, role, status)
+INSERT IGNORE INTO `users` (email, password_hash, role, status)
 VALUES ('fgonzalez@partzix.com', '$2b$10$FquFVfRK9YgEf8PyQOD3vebUzjhKPsqRgdwSJmsK8RDbQcXqUJkPG', 'admin', 'approved');
 
 -- Table structure for categories
-CREATE TABLE `categories` (
+CREATE TABLE IF NOT EXISTS `categories` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `name` VARCHAR(100) NOT NULL UNIQUE,
   `description` TEXT DEFAULT NULL,
@@ -121,7 +100,7 @@ CREATE TABLE `categories` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Table structure for lines
-CREATE TABLE `lines` (
+CREATE TABLE IF NOT EXISTS `lines` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `category_id` INT NOT NULL,
   `name` VARCHAR(100) NOT NULL,
@@ -135,7 +114,7 @@ CREATE TABLE `lines` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Table structure for sublines
-CREATE TABLE `sublines` (
+CREATE TABLE IF NOT EXISTS `sublines` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `line_id` INT NOT NULL,
   `name` VARCHAR(100) NOT NULL,
@@ -149,7 +128,7 @@ CREATE TABLE `sublines` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Table structure for brands
-CREATE TABLE `brands` (
+CREATE TABLE IF NOT EXISTS `brands` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `category_id` INT NOT NULL,
   `name` VARCHAR(100) NOT NULL,
@@ -165,7 +144,7 @@ CREATE TABLE `brands` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Table structure for models
-CREATE TABLE `models` (
+CREATE TABLE IF NOT EXISTS `models` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `category_id` INT NOT NULL,
   `brand_id` INT NOT NULL,
@@ -183,7 +162,7 @@ CREATE TABLE `models` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Table structure for years
-CREATE TABLE `years` (
+CREATE TABLE IF NOT EXISTS `years` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `year` INT NOT NULL UNIQUE,
   `created_by` INT NOT NULL,
@@ -193,7 +172,7 @@ CREATE TABLE `years` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Table structure for product_brands
-CREATE TABLE `product_brands` (
+CREATE TABLE IF NOT EXISTS `product_brands` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `warehouse_id` INT NOT NULL,
   `name` VARCHAR(100) NOT NULL,
@@ -209,7 +188,7 @@ CREATE TABLE `product_brands` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Table structure for displacements
-CREATE TABLE `displacements` (
+CREATE TABLE IF NOT EXISTS `displacements` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `category_id` INT NOT NULL,
   `displacement` VARCHAR(50) NOT NULL,
@@ -225,7 +204,7 @@ CREATE TABLE `displacements` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Table structure for taxes
-CREATE TABLE `taxes` (
+CREATE TABLE IF NOT EXISTS `taxes` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `name` VARCHAR(100) NOT NULL UNIQUE,
   `rate_percent` DECIMAL(5,2) NOT NULL,
@@ -234,13 +213,13 @@ CREATE TABLE `taxes` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Seed default taxes
-INSERT INTO `taxes` (name, rate_percent, description) VALUES
+INSERT IGNORE INTO `taxes` (name, rate_percent, description) VALUES
 ('IVA 19%', 19.00, 'Impuesto sobre el Valor Añadido general del 19%'),
 ('IVA 5%', 5.00, 'Impuesto sobre el Valor Añadido reducido del 5%'),
 ('Exento', 0.00, 'Exento de Impuestos');
 
 -- Table structure for products
-CREATE TABLE `products` (
+CREATE TABLE IF NOT EXISTS `products` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `warehouse_id` INT NOT NULL,
   `sku` VARCHAR(100) NOT NULL,
@@ -281,7 +260,7 @@ CREATE TABLE `products` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Table structure for product_models (Compatibility)
-CREATE TABLE `product_models` (
+CREATE TABLE IF NOT EXISTS `product_models` (
   `product_id` INT NOT NULL,
   `model_id` INT NOT NULL,
   PRIMARY KEY (`product_id`, `model_id`),
@@ -290,7 +269,7 @@ CREATE TABLE `product_models` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Table structure for product_years (Compatibility)
-CREATE TABLE `product_years` (
+CREATE TABLE IF NOT EXISTS `product_years` (
   `product_id` INT NOT NULL,
   `year_id` INT NOT NULL,
   PRIMARY KEY (`product_id`, `year_id`),
@@ -299,7 +278,7 @@ CREATE TABLE `product_years` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Table structure for product_displacements (Compatibility)
-CREATE TABLE `product_displacements` (
+CREATE TABLE IF NOT EXISTS `product_displacements` (
   `product_id` INT NOT NULL,
   `displacement_id` INT NOT NULL,
   PRIMARY KEY (`product_id`, `displacement_id`),
@@ -308,7 +287,7 @@ CREATE TABLE `product_displacements` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Table structure for product_taxes (Applicable taxes)
-CREATE TABLE `product_taxes` (
+CREATE TABLE IF NOT EXISTS `product_taxes` (
   `product_id` INT NOT NULL,
   `tax_id` INT NOT NULL,
   PRIMARY KEY (`product_id`, `tax_id`),
@@ -317,7 +296,7 @@ CREATE TABLE `product_taxes` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Table structure for product_images
-CREATE TABLE `product_images` (
+CREATE TABLE IF NOT EXISTS `product_images` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `product_id` INT NOT NULL,
   `image_path` VARCHAR(255) NOT NULL,

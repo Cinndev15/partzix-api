@@ -16,6 +16,7 @@ const productBrandRoutes = require('./routes/productBrandRoutes');
 const displacementRoutes = require('./routes/displacementRoutes');
 const productRoutes = require('./routes/productRoutes');
 const taxRoutes = require('./routes/taxRoutes');
+const customerRoutes = require('./routes/customerRoutes');
 
 const path = require('path');
 const { swaggerUi, swaggerSpec } = require('./config/swagger');
@@ -114,6 +115,7 @@ app.use('/api/product-brands', productBrandRoutes);
 app.use('/api/displacements', displacementRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/taxes', taxRoutes);
+app.use('/api/customers', customerRoutes);
 
 // 404 Route handler
 app.use((req, res, next) => {

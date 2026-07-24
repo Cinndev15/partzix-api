@@ -219,7 +219,7 @@ async function getProducts(req, res, next) {
       INNER JOIN warehouses w ON p.warehouse_id = w.id
       INNER JOIN categories c ON p.category_id = c.id
       LEFT JOIN product_brands pb ON p.product_brand_id = pb.id
-      LEFT JOIN lines l ON p.line_id = l.id
+      LEFT JOIN \`lines\` l ON p.line_id = l.id
       LEFT JOIN sublines sl ON p.subline_id = sl.id
     `;
     const params = [];
@@ -289,7 +289,7 @@ async function getProductById(req, res, next) {
       INNER JOIN warehouses w ON p.warehouse_id = w.id
       INNER JOIN categories c ON p.category_id = c.id
       LEFT JOIN product_brands pb ON p.product_brand_id = pb.id
-      LEFT JOIN lines l ON p.line_id = l.id
+      LEFT JOIN \`lines\` l ON p.line_id = l.id
       LEFT JOIN sublines sl ON p.subline_id = sl.id
       WHERE p.id = ?
     `;

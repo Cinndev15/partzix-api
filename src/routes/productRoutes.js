@@ -88,10 +88,6 @@ router.get('/taxes', getTaxes);
  *                 type: integer
  *                 description: ID del perfil del proveedor.
  *                 example: 1
- *               physical_condition:
- *                 type: string
- *                 enum: ["Nuevo (Garantizado)", "Nuevo (Genérico)", "Reconstruido", "Usado"]
- *                 example: "Nuevo (Garantizado)"
  *               status:
  *                 type: string
  *                 enum: ["Activo (Visible en tienda)", "Borrador", "Inactivo"]
@@ -262,8 +258,6 @@ router.get('/', authenticateToken, getProducts);
  *                 type: integer
  *               provider_profile_id:
  *                 type: integer
- *               physical_condition:
- *                 type: string
  *               status:
  *                 type: string
  *               is_featured:

@@ -66,7 +66,6 @@ async function createProduct(req, res, next) {
     line_id,
     subline_id,
     provider_profile_id,
-    physical_condition,
     status,
     is_featured,
     spare_part_type,
@@ -134,14 +133,14 @@ async function createProduct(req, res, next) {
     const [result] = await pool.query(
       `INSERT INTO products (
         warehouse_id, sku, commercial_name, factory_reference, stock_units, purchase_price, profit_percent, sale_price,
-        product_brand_id, category_id, line_id, subline_id, provider_profile_id, consecutive_code, physical_condition,
+        product_brand_id, category_id, line_id, subline_id, provider_profile_id, consecutive_code,
         status, is_featured, spare_part_type, mechanical_position, vehicle_side, compatible_transmission_type,
         technical_description, created_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         warehouse_id, sku, commercial_name, factory_reference || null, stock_units, pPrice, pProfit, sale_price,
         product_brand_id || null, category_id, line_id || null, subline_id || null, provider_profile_id || null,
-        consecutive_code, physical_condition || 'Nuevo (Garantizado)', status || 'Activo (Visible en tienda)',
+        consecutive_code, status || 'Activo (Visible en tienda)',
         is_featured === 'true' || is_featured === true || false, spare_part_type || 'Genérico',
         mechanical_position || null, vehicle_side || null, compatible_transmission_type || null,
         technical_description || null, created_by
@@ -355,7 +354,6 @@ async function updateProduct(req, res, next) {
     line_id,
     subline_id,
     provider_profile_id,
-    physical_condition,
     status,
     is_featured,
     spare_part_type,
@@ -406,7 +404,7 @@ async function updateProduct(req, res, next) {
       `UPDATE products SET
         sku = ?, commercial_name = ?, factory_reference = ?, stock_units = ?, purchase_price = ?, profit_percent = ?,
         sale_price = ?, product_brand_id = ?, category_id = ?, line_id = ?, subline_id = ?, provider_profile_id = ?,
-        physical_condition = ?, status = ?, is_featured = ?, spare_part_type = ?, mechanical_position = ?,
+        status = ?, is_featured = ?, spare_part_type = ?, mechanical_position = ?,
         vehicle_side = ?, compatible_transmission_type = ?, technical_description = ?, updated_by = ?
       WHERE id = ?`,
       [
@@ -422,7 +420,6 @@ async function updateProduct(req, res, next) {
         line_id !== undefined ? line_id : currentProduct.line_id,
         subline_id !== undefined ? subline_id : currentProduct.subline_id,
         provider_profile_id !== undefined ? provider_profile_id : currentProduct.provider_profile_id,
-        physical_condition || currentProduct.physical_condition,
         status || currentProduct.status,
         is_featured !== undefined ? (is_featured === 'true' || is_featured === true) : currentProduct.is_featured,
         spare_part_type || currentProduct.spare_part_type,

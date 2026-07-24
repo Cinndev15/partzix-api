@@ -235,7 +235,6 @@ CREATE TABLE IF NOT EXISTS `products` (
   `subline_id` INT DEFAULT NULL,
   `provider_profile_id` INT DEFAULT NULL,
   `consecutive_code` VARCHAR(50) NOT NULL,
-  `physical_condition` VARCHAR(100) DEFAULT 'Nuevo (Garantizado)',
   `status` VARCHAR(100) DEFAULT 'Activo (Visible en tienda)',
   `is_featured` BOOLEAN DEFAULT FALSE,
   `spare_part_type` VARCHAR(100) DEFAULT 'Genérico',

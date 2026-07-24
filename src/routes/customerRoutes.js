@@ -128,9 +128,7 @@ router.post(
   [
     body('email')
       .trim()
-      .notEmpty().withMessage('El correo electrónico es requerido.')
-      .isEmail().withMessage('El formato del correo electrónico no es válido.')
-      .normalizeEmail(),
+      .notEmpty().withMessage('El correo electrónico o teléfono es requerido.'),
     body('password')
       .trim()
       .notEmpty().withMessage('La contraseña es requerida.')

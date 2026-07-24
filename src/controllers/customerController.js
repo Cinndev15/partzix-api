@@ -66,7 +66,7 @@ async function loginCustomer(req, res, next) {
   const { email, password } = req.body;
 
   try {
-    const [rows] = await pool.query('SELECT * FROM customers WHERE email = ?', [email]);
+    const [rows] = await pool.query('SELECT * FROM customers WHERE email = ? OR phone = ?', [email, email]);
     if (rows.length === 0) {
       return res.status(401).json({
         success: false,

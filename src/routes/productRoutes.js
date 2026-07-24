@@ -46,8 +46,7 @@ router.get('/taxes', getTaxes);
  *               - sku
  *               - commercial_name
  *               - stock_units
- *               - purchase_price
- *               - profit_percent
+ *               - sale_price
  *               - category_id
  *             properties:
  *               sku:
@@ -62,12 +61,9 @@ router.get('/taxes', getTaxes);
  *               stock_units:
  *                 type: integer
  *                 example: 24
- *               purchase_price:
+ *               sale_price:
  *                 type: number
- *                 example: 100000
- *               profit_percent:
- *                 type: number
- *                 example: 20
+ *                 example: 120000
  *               product_brand_id:
  *                 type: integer
  *                 description: ID de la marca de producto (marca fabricante del almacén).
@@ -244,9 +240,7 @@ router.get('/', authenticateToken, getProducts);
  *                 type: string
  *               stock_units:
  *                 type: integer
- *               purchase_price:
- *                 type: number
- *               profit_percent:
+ *               sale_price:
  *                 type: number
  *               product_brand_id:
  *                 type: integer

@@ -59,8 +59,7 @@ async function createProduct(req, res, next) {
     commercial_name,
     factory_reference,
     stock_units,
-    purchase_price,
-    profit_percent,
+    sale_price,
     product_brand_id,
     category_id,
     line_id,
@@ -102,10 +101,10 @@ async function createProduct(req, res, next) {
     }
 
     // Validate required fields
-    if (!sku || !commercial_name || stock_units === undefined || purchase_price === undefined || profit_percent === undefined || !category_id) {
+    if (!sku || !commercial_name || stock_units === undefined || sale_price === undefined || !category_id) {
       return res.status(400).json({
         success: false,
-        message: 'Los campos sku, nombre comercial, stock, precio compra, ganancia % y categoría son obligatorios.'
+        message: 'Los campos sku, nombre comercial, stock, precio de venta y categoría son obligatorios.'
       });
     }
 
@@ -121,24 +120,19 @@ async function createProduct(req, res, next) {
       });
     }
 
-    // Calculate sale price
-    const pPrice = parseFloat(purchase_price);
-    const pProfit = parseFloat(profit_percent);
-    const sale_price = pPrice + (pPrice * pProfit / 100);
-
     // Generate consecutive code
     const consecutive_code = await generateConsecutiveCode();
 
     // Insert Product
     const [result] = await pool.query(
       `INSERT INTO products (
-        warehouse_id, sku, commercial_name, factory_reference, stock_units, purchase_price, profit_percent, sale_price,
+        warehouse_id, sku, commercial_name, factory_reference, stock_units, sale_price,
         product_brand_id, category_id, line_id, subline_id, provider_profile_id, consecutive_code,
         status, is_featured, spare_part_type, mechanical_position, vehicle_side, compatible_transmission_type,
         technical_description, created_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        warehouse_id, sku, commercial_name, factory_reference || null, stock_units, pPrice, pProfit, sale_price,
+        warehouse_id, sku, commercial_name, factory_reference || null, stock_units, parseFloat(sale_price),
         product_brand_id || null, category_id, line_id || null, subline_id || null, provider_profile_id || null,
         consecutive_code, status || 'Activo (Visible en tienda)',
         is_featured === 'true' || is_featured === true || false, spare_part_type || 'Genérico',
@@ -347,8 +341,7 @@ async function updateProduct(req, res, next) {
     commercial_name,
     factory_reference,
     stock_units,
-    purchase_price,
-    profit_percent,
+    sale_price,
     product_brand_id,
     category_id,
     line_id,
@@ -394,15 +387,10 @@ async function updateProduct(req, res, next) {
       }
     }
 
-    // Calculate sale price
-    const pPrice = purchase_price !== undefined ? parseFloat(purchase_price) : parseFloat(currentProduct.purchase_price);
-    const pProfit = profit_percent !== undefined ? parseFloat(profit_percent) : parseFloat(currentProduct.profit_percent);
-    const sale_price = pPrice + (pPrice * pProfit / 100);
-
     // Update Product Record
     await pool.query(
       `UPDATE products SET
-        sku = ?, commercial_name = ?, factory_reference = ?, stock_units = ?, purchase_price = ?, profit_percent = ?,
+        sku = ?, commercial_name = ?, factory_reference = ?, stock_units = ?,
         sale_price = ?, product_brand_id = ?, category_id = ?, line_id = ?, subline_id = ?, provider_profile_id = ?,
         status = ?, is_featured = ?, spare_part_type = ?, mechanical_position = ?,
         vehicle_side = ?, compatible_transmission_type = ?, technical_description = ?, updated_by = ?
@@ -412,9 +400,7 @@ async function updateProduct(req, res, next) {
         commercial_name || currentProduct.commercial_name,
         factory_reference !== undefined ? factory_reference : currentProduct.factory_reference,
         stock_units !== undefined ? stock_units : currentProduct.stock_units,
-        pPrice,
-        pProfit,
-        sale_price,
+        sale_price !== undefined ? parseFloat(sale_price) : parseFloat(currentProduct.sale_price),
         product_brand_id !== undefined ? product_brand_id : currentProduct.product_brand_id,
         category_id || currentProduct.category_id,
         line_id !== undefined ? line_id : currentProduct.line_id,

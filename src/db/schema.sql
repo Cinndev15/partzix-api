@@ -226,8 +226,6 @@ CREATE TABLE IF NOT EXISTS `products` (
   `commercial_name` VARCHAR(255) NOT NULL,
   `factory_reference` VARCHAR(255) DEFAULT NULL,
   `stock_units` INT NOT NULL DEFAULT 0,
-  `purchase_price` DECIMAL(12,2) NOT NULL,
-  `profit_percent` DECIMAL(5,2) NOT NULL,
   `sale_price` DECIMAL(12,2) NOT NULL,
   `product_brand_id` INT DEFAULT NULL,
   `category_id` INT NOT NULL,

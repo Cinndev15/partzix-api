@@ -1,20 +1,28 @@
-const COLOMBIAN_LOCATIONS = [
-  { name: 'Antioquia', cities: ['Medellín', 'Envigado', 'Bello', 'Itagüí', 'Rionegro', 'Apartadó', 'Envigado'] },
-  { name: 'Atlántico', cities: ['Barranquilla', 'Soledad', 'Malambo', 'Puerto Colombia', 'Sabanagrande'] },
-  { name: 'Bogotá D.C.', cities: ['Bogotá'] },
-  { name: 'Bolívar', cities: ['Cartagena', 'Magangué', 'Turbaco', 'Arjona'] },
-  { name: 'Boyacá', cities: ['Tunja', 'Duitama', 'Sogamoso', 'Chiquinquirá'] },
-  { name: 'Caldas', cities: ['Manizales', 'La Dorada', 'Riosucio', 'Chinchiná'] },
-  { name: 'Cundinamarca', cities: ['Soacha', 'Chía', 'Zipaquirá', 'Facatativá', 'Fusagasugá', 'Girardot', 'Mosquera'] },
-  { name: 'Santander', cities: ['Bucaramanga', 'Floridablanca', 'Girón', 'Piedecuesta', 'Barrancabermeja', 'San Gil'] },
-  { name: 'Valle del Cauca', cities: ['Cali', 'Palmira', 'Buenaventura', 'Tuluá', 'Yumbo', 'Buga', 'Cartago'] }
-];
+const fs = require('fs');
+const path = require('path');
 
 async function getLocations(req, res, next) {
   try {
+    const jsonPath = path.join(__dirname, '../config/colombia.json');
+    if (!fs.existsSync(jsonPath)) {
+      return res.status(500).json({
+        success: false,
+        message: 'Archivo de ubicaciones no encontrado.'
+      });
+    }
+
+    const fileContent = fs.readFileSync(jsonPath, 'utf8');
+    const rawData = JSON.parse(fileContent);
+
+    // Map to keep API contract: { name: departamento, cities: ciudades }
+    const mapped = rawData.map(item => ({
+      name: item.departamento,
+      cities: item.ciudades
+    }));
+
     return res.status(200).json({
       success: true,
-      data: COLOMBIAN_LOCATIONS
+      data: mapped
     });
   } catch (error) {
     next(error);

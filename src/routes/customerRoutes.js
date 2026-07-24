@@ -7,7 +7,10 @@ const {
   getCustomers,
   getCustomerById,
   updateCustomer,
-  deleteCustomer
+  deleteCustomer,
+  getCustomerAddresses,
+  addCustomerAddress,
+  deleteCustomerAddress
 } = require('../controllers/customerController');
 
 const router = express.Router();
@@ -264,5 +267,116 @@ router.put(
   updateCustomer
 );
 router.delete('/:id', authenticateToken, deleteCustomer);
+
+/**
+ * @openapi
+ * /api/customers/addresses:
+ *   get:
+ *     summary: Obtiene la lista de direcciones del cliente autenticado
+ *     description: Retorna todas las direcciones registradas por el comprador actual.
+ *     tags:
+ *       - Clientes - Direcciones
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de direcciones obtenida con éxito.
+ *   post:
+ *     summary: Registra una nueva dirección para el cliente autenticado
+ *     description: Agrega una dirección de entrega. Si se define como principal, el resto se desmarcarán.
+ *     tags:
+ *       - Clientes - Direcciones
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - alias
+ *               - phone
+ *               - receiver_name
+ *               - department
+ *               - city
+ *               - address_line
+ *               - neighborhood
+ *             properties:
+ *               alias:
+ *                 type: string
+ *                 example: "Mi Casa"
+ *               phone:
+ *                 type: string
+ *                 example: "+57 3001234567"
+ *               receiver_name:
+ *                 type: string
+ *                 example: "Juan Pérez"
+ *               department:
+ *                 type: string
+ *                 example: "Cundinamarca"
+ *               city:
+ *                 type: string
+ *                 example: "Soacha"
+ *               address_line:
+ *                 type: string
+ *                 example: "Calle 10 # 5-20"
+ *               neighborhood:
+ *                 type: string
+ *                 example: "San Humberto"
+ *               additional_info:
+ *                 type: string
+ *                 example: "Apto 402, Torre 3"
+ *               is_primary:
+ *                 type: boolean
+ *                 example: true
+ *     responses:
+ *       201:
+ *         description: Dirección creada con éxito.
+ *       400:
+ *         description: Errores de validación de campos.
+ */
+router.get('/addresses', authenticateToken, getCustomerAddresses);
+router.post(
+  '/addresses',
+  authenticateToken,
+  [
+    body('alias').trim().notEmpty().withMessage('El alias es requerido.'),
+    body('phone').trim().notEmpty().withMessage('El teléfono es requerido.'),
+    body('receiver_name').trim().notEmpty().withMessage('El nombre de quien recibe es requerido.'),
+    body('department').trim().notEmpty().withMessage('El departamento es requerido.'),
+    body('city').trim().notEmpty().withMessage('El municipio o ciudad es requerido.'),
+    body('address_line').trim().notEmpty().withMessage('La dirección principal es requerida.'),
+    body('neighborhood').trim().notEmpty().withMessage('El barrio o localidad es requerido.'),
+    body('is_primary').optional().isBoolean().withMessage('is_primary debe ser booleano.')
+  ],
+  validate,
+  addCustomerAddress
+);
+
+/**
+ * @openapi
+ * /api/customers/addresses/{id}:
+ *   delete:
+ *     summary: Elimina una dirección
+ *     description: Borra la dirección especificada del cliente logueado.
+ *     tags:
+ *       - Clientes - Direcciones
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID de la dirección a eliminar.
+ *     responses:
+ *       200:
+ *         description: Dirección eliminada con éxito.
+ *       404:
+ *         description: Dirección no encontrada.
+ */
+router.delete('/addresses/:id', authenticateToken, deleteCustomerAddress);
 
 module.exports = router;

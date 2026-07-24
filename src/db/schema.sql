@@ -315,4 +315,23 @@ CREATE TABLE IF NOT EXISTS `customers` (
   INDEX `idx_customer_email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Table structure for customer_addresses
+CREATE TABLE IF NOT EXISTS `customer_addresses` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `customer_id` INT NOT NULL,
+  `alias` VARCHAR(100) NOT NULL,
+  `phone` VARCHAR(20) NOT NULL,
+  `receiver_name` VARCHAR(150) NOT NULL,
+  `department` VARCHAR(100) NOT NULL,
+  `city` VARCHAR(100) NOT NULL,
+  `address_line` VARCHAR(255) NOT NULL,
+  `neighborhood` VARCHAR(100) NOT NULL,
+  `additional_info` VARCHAR(255) DEFAULT NULL,
+  `is_primary` BOOLEAN DEFAULT FALSE,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT `fk_address_customer` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
 

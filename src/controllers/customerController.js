@@ -235,11 +235,142 @@ async function deleteCustomer(req, res, next) {
   }
 }
 
+/**
+ * Get all addresses for the logged-in customer
+ */
+async function getCustomerAddresses(req, res, next) {
+  try {
+    const customerId = req.user.id;
+    const [rows] = await pool.query(
+      'SELECT * FROM customer_addresses WHERE customer_id = ? ORDER BY is_primary DESC, created_at DESC',
+      [customerId]
+    );
+    return res.status(200).json({
+      success: true,
+      data: rows
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Add a new address for the logged-in customer
+ */
+async function addCustomerAddress(req, res, next) {
+  const {
+    alias,
+    phone,
+    receiver_name,
+    department,
+    city,
+    address_line,
+    neighborhood,
+    additional_info,
+    is_primary
+  } = req.body;
+  
+  const customerId = req.user.id;
+  const primaryVal = is_primary === true || is_primary === 'true';
+
+  try {
+    const connection = await pool.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      // If this address is primary, reset other primary addresses of this customer
+      if (primaryVal) {
+        await connection.query(
+          'UPDATE customer_addresses SET is_primary = FALSE WHERE customer_id = ?',
+          [customerId]
+        );
+      }
+
+      const insertQuery = `
+        INSERT INTO customer_addresses 
+        (customer_id, alias, phone, receiver_name, department, city, address_line, neighborhood, additional_info, is_primary)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+      const [result] = await connection.query(insertQuery, [
+        customerId,
+        alias,
+        phone,
+        receiver_name,
+        department,
+        city,
+        address_line,
+        neighborhood,
+        additional_info,
+        primaryVal
+      ]);
+
+      await connection.commit();
+
+      return res.status(201).json({
+        success: true,
+        message: 'Dirección registrada con éxito.',
+        data: {
+          id: result.insertId,
+          customer_id: customerId,
+          alias,
+          phone,
+          receiver_name,
+          department,
+          city,
+          address_line,
+          neighborhood,
+          additional_info,
+          is_primary: primaryVal
+        }
+      });
+    } catch (err) {
+      await connection.rollback();
+      throw err;
+    } finally {
+      connection.release();
+    }
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Delete an address
+ */
+async function deleteCustomerAddress(req, res, next) {
+  const addressId = parseInt(req.params.id);
+  const customerId = req.user.id;
+
+  try {
+    const [result] = await pool.query(
+      'DELETE FROM customer_addresses WHERE id = ? AND customer_id = ?',
+      [addressId, customerId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Dirección no encontrada o no pertenece al cliente.'
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Dirección eliminada con éxito.'
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   registerCustomer,
   loginCustomer,
   getCustomers,
   getCustomerById,
   updateCustomer,
-  deleteCustomer
+  deleteCustomer,
+  getCustomerAddresses,
+  addCustomerAddress,
+  deleteCustomerAddress
 };

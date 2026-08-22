@@ -4,7 +4,7 @@ const { pool } = require('../db/db');
  * Create a new brand under a category (Admin only)
  */
 async function createBrand(req, res, next) {
-  const { category_id, name, description } = req.body;
+  const { category_id, name, description, status } = req.body;
   const created_by = req.user.id;
 
   try {
@@ -35,7 +35,7 @@ async function createBrand(req, res, next) {
 
     const [result] = await pool.query(
       'INSERT INTO brands (category_id, name, description, created_by) VALUES (?, ?, ?, ?)',
-      [category_id, name, description || null, created_by]
+      [category_id, name, description || null, status || 'Activo', created_by]
     );
 
     return res.status(201).json({
@@ -128,7 +128,7 @@ async function getBrandById(req, res, next) {
  */
 async function updateBrand(req, res, next) {
   const { id } = req.params;
-  const { name, description } = req.body;
+  const { category_id, name, description, status } = req.body;
   const updated_by = req.user.id;
 
   try {
@@ -148,12 +148,12 @@ async function updateBrand(req, res, next) {
       });
     }
 
-    const { category_id } = existing[0];
+    const finalCategoryId = category_id !== undefined ? parseInt(category_id) : existing[0].category_id;
 
     // Check if name is duplicate under the same category
     const [duplicate] = await pool.query(
       'SELECT id FROM brands WHERE category_id = ? AND name = ? AND id != ?',
-      [category_id, name, id]
+      [finalCategoryId, name, id]
     );
     if (duplicate.length > 0) {
       return res.status(400).json({
@@ -164,7 +164,7 @@ async function updateBrand(req, res, next) {
 
     await pool.query(
       'UPDATE brands SET name = ?, description = ?, updated_by = ? WHERE id = ?',
-      [name, description || null, updated_by, id]
+      [finalCategoryId, name, description || null, status || 'Activo', updated_by, id]
     );
 
     return res.status(200).json({
@@ -209,10 +209,30 @@ async function deleteBrand(req, res, next) {
   }
 }
 
+
+/**
+ * Update brand status (Admin only)
+ */
+async function updateBrandStatus(req, res, next) {
+  const { id } = req.params;
+  const { status } = req.body;
+  try {
+    if (status !== 'Activo' && status !== 'Inactivo') {
+      return res.status(400).json({ success: false, message: "El estado debe ser 'Activo' o 'Inactivo'." });
+    }
+    const [result] = await pool.query('UPDATE `brands` SET status = ? WHERE id = ?', [status, id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Marca no encontrada.' });
+    }
+    return res.status(200).json({ success: true, message: 'Estado actualizado con éxito.', data: { id: parseInt(id), status } });
+  } catch (error) { next(error); }
+}
+
 module.exports = {
   createBrand,
   getBrands,
   getBrandById,
   updateBrand,
-  deleteBrand
+  deleteBrand,
+  updateBrandStatus
 };

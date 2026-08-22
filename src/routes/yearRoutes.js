@@ -5,7 +5,8 @@ const {
   getYears,
   getYearById,
   updateYear,
-  deleteYear
+  deleteYear,
+  updateYearStatus
 } = require('../controllers/yearController');
 
 const router = express.Router();
@@ -136,6 +137,7 @@ router.get('/', getYears);
  */
 router.get('/:id', getYearById);
 router.put('/:id', authenticateToken, requireRole('admin'), updateYear);
+router.patch('/:id/status', authenticateToken, requireRole('admin'), updateYearStatus);
 router.delete('/:id', authenticateToken, requireRole('admin'), deleteYear);
 
 module.exports = router;

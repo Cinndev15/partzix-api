@@ -5,7 +5,8 @@ const {
   getModels,
   getModelById,
   updateModel,
-  deleteModel
+  deleteModel,
+  updateModelStatus
 } = require('../controllers/modelController');
 
 const router = express.Router();
@@ -165,6 +166,7 @@ router.get('/', getModels);
  */
 router.get('/:id', getModelById);
 router.put('/:id', authenticateToken, requireRole('admin'), updateModel);
+router.patch('/:id/status', authenticateToken, requireRole('admin'), updateModelStatus);
 router.delete('/:id', authenticateToken, requireRole('admin'), deleteModel);
 
 module.exports = router;

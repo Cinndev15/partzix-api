@@ -4,7 +4,7 @@ const { pool } = require('../db/db');
  * Create a new subline under a line (Admin only)
  */
 async function createSubline(req, res, next) {
-  const { line_id, name, description } = req.body;
+  const { line_id, name, description, status } = req.body;
   const created_by = req.user.id;
 
   try {
@@ -35,7 +35,7 @@ async function createSubline(req, res, next) {
 
     const [result] = await pool.query(
       'INSERT INTO sublines (line_id, name, description, created_by) VALUES (?, ?, ?, ?)',
-      [line_id, name, description || null, created_by]
+      [line_id, name, description || null, status || 'Activo', created_by]
     );
 
     return res.status(201).json({
@@ -62,7 +62,7 @@ async function getSublines(req, res, next) {
 
   try {
     let query = `
-      SELECT s.id, s.line_id, l.name as line_name, s.name, s.description, s.created_at, s.updated_at, u.email as creator_email
+      SELECT s.id, s.line_id, l.name as line_name, s.name, s.description, s.status, s.created_at, s.updated_at, u.email as creator_email, COALESCE(u.name, u.email) as creator_name
       FROM sublines s
       INNER JOIN \`lines\` l ON s.line_id = l.id
       INNER JOIN users u ON s.created_by = u.id
@@ -95,7 +95,7 @@ async function getSublineById(req, res, next) {
 
   try {
     const query = `
-      SELECT s.id, s.line_id, l.name as line_name, s.name, s.description, s.created_at, s.updated_at, u.email as creator_email
+      SELECT s.id, s.line_id, l.name as line_name, s.name, s.description, s.status, s.created_at, s.updated_at, u.email as creator_email, COALESCE(u.name, u.email) as creator_name
       FROM sublines s
       INNER JOIN \`lines\` l ON s.line_id = l.id
       INNER JOIN users u ON s.created_by = u.id
@@ -124,7 +124,7 @@ async function getSublineById(req, res, next) {
  */
 async function updateSubline(req, res, next) {
   const { id } = req.params;
-  const { name, description } = req.body;
+  const { line_id, name, description, status } = req.body;
 
   try {
     if (!name) {
@@ -143,12 +143,12 @@ async function updateSubline(req, res, next) {
       });
     }
 
-    const { line_id } = existing[0];
+    const finalLineId = line_id !== undefined ? parseInt(line_id) : existing[0].line_id;
 
     // Check if name is duplicate under the same line
     const [duplicate] = await pool.query(
       'SELECT id FROM sublines WHERE line_id = ? AND name = ? AND id != ?',
-      [line_id, name, id]
+      [finalLineId, name, id]
     );
     if (duplicate.length > 0) {
       return res.status(400).json({
@@ -159,7 +159,7 @@ async function updateSubline(req, res, next) {
 
     await pool.query(
       'UPDATE sublines SET name = ?, description = ? WHERE id = ?',
-      [name, description || null, id]
+      [finalLineId, name, description || null, status || 'Activo', id]
     );
 
     return res.status(200).json({
@@ -203,10 +203,30 @@ async function deleteSubline(req, res, next) {
   }
 }
 
+
+/**
+ * Update subline status (Admin only)
+ */
+async function updateSublineStatus(req, res, next) {
+  const { id } = req.params;
+  const { status } = req.body;
+  try {
+    if (status !== 'Activo' && status !== 'Inactivo') {
+      return res.status(400).json({ success: false, message: "El estado debe ser 'Activo' o 'Inactivo'." });
+    }
+    const [result] = await pool.query('UPDATE `sublines` SET status = ? WHERE id = ?', [status, id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Sublínea no encontrada.' });
+    }
+    return res.status(200).json({ success: true, message: 'Estado actualizado con éxito.', data: { id: parseInt(id), status } });
+  } catch (error) { next(error); }
+}
+
 module.exports = {
   createSubline,
   getSublines,
   getSublineById,
   updateSubline,
-  deleteSubline
+  deleteSubline,
+  updateSublineStatus
 };

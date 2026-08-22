@@ -5,7 +5,8 @@ const {
   getSublines,
   getSublineById,
   updateSubline,
-  deleteSubline
+  deleteSubline,
+  updateSublineStatus
 } = require('../controllers/sublineController');
 
 const router = express.Router();
@@ -155,6 +156,7 @@ router.get('/', getSublines);
  */
 router.get('/:id', getSublineById);
 router.put('/:id', authenticateToken, requireRole('admin'), updateSubline);
+router.patch('/:id/status', authenticateToken, requireRole('admin'), updateSublineStatus);
 router.delete('/:id', authenticateToken, requireRole('admin'), deleteSubline);
 
 module.exports = router;

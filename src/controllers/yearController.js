@@ -4,7 +4,7 @@ const { pool } = require('../db/db');
  * Create a new year (Admin only)
  */
 async function createYear(req, res, next) {
-  const { year } = req.body;
+  const { year, status } = req.body;
   const created_by = req.user.id;
 
   try {
@@ -57,7 +57,7 @@ async function createYear(req, res, next) {
 async function getYears(req, res, next) {
   try {
     const query = `
-      SELECT y.id, y.year, y.created_at, y.updated_at, u.email as creator_email
+      SELECT y.id, y.year, y.status, y.created_at, y.updated_at, u.email as creator_email, COALESCE(u.name, u.email) as creator_name
       FROM years y
       INNER JOIN users u ON y.created_by = u.id
       ORDER BY y.year DESC
@@ -81,7 +81,7 @@ async function getYearById(req, res, next) {
 
   try {
     const query = `
-      SELECT y.id, y.year, y.created_at, y.updated_at, u.email as creator_email
+      SELECT y.id, y.year, y.status, y.created_at, y.updated_at, u.email as creator_email, COALESCE(u.name, u.email) as creator_name
       FROM years y
       INNER JOIN users u ON y.created_by = u.id
       WHERE y.id = ?
@@ -109,7 +109,7 @@ async function getYearById(req, res, next) {
  */
 async function updateYear(req, res, next) {
   const { id } = req.params;
-  const { year } = req.body;
+  const { year, status } = req.body;
 
   try {
     if (!year) {
@@ -186,10 +186,30 @@ async function deleteYear(req, res, next) {
   }
 }
 
+
+/**
+ * Update year status (Admin only)
+ */
+async function updateYearStatus(req, res, next) {
+  const { id } = req.params;
+  const { status } = req.body;
+  try {
+    if (status !== 'Activo' && status !== 'Inactivo') {
+      return res.status(400).json({ success: false, message: "El estado debe ser 'Activo' o 'Inactivo'." });
+    }
+    const [result] = await pool.query('UPDATE `years` SET status = ? WHERE id = ?', [status, id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Año no encontrado.' });
+    }
+    return res.status(200).json({ success: true, message: 'Estado actualizado con éxito.', data: { id: parseInt(id), status } });
+  } catch (error) { next(error); }
+}
+
 module.exports = {
   createYear,
   getYears,
   getYearById,
   updateYear,
-  deleteYear
+  deleteYear,
+  updateYearStatus
 };

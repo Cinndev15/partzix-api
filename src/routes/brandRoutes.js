@@ -5,7 +5,8 @@ const {
   getBrands,
   getBrandById,
   updateBrand,
-  deleteBrand
+  deleteBrand,
+  updateBrandStatus
 } = require('../controllers/brandController');
 
 const router = Router();
@@ -159,6 +160,7 @@ router.get('/', getBrands);
  */
 router.get('/:id', getBrandById);
 router.put('/:id', authenticateToken, requireRole('admin'), updateBrand);
+router.patch('/:id/status', authenticateToken, requireRole('admin'), updateBrandStatus);
 router.delete('/:id', authenticateToken, requireRole('admin'), deleteBrand);
 
 module.exports = router;

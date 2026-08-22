@@ -4,7 +4,7 @@ const { pool } = require('../db/db');
  * Create a new model under a brand and a category (Admin only)
  */
 async function createModel(req, res, next) {
-  const { category_id, brand_id, name, description } = req.body;
+  const { category_id, brand_id, name, description, status } = req.body;
   const created_by = req.user.id;
 
   try {
@@ -47,7 +47,7 @@ async function createModel(req, res, next) {
 
     const [result] = await pool.query(
       'INSERT INTO models (category_id, brand_id, name, description, created_by) VALUES (?, ?, ?, ?, ?)',
-      [category_id, brand_id, name, description || null, created_by]
+      [category_id, brand_id, name, description || null, status || 'Activo', created_by]
     );
 
     return res.status(201).json({
@@ -155,7 +155,7 @@ async function getModelById(req, res, next) {
  */
 async function updateModel(req, res, next) {
   const { id } = req.params;
-  const { name, description } = req.body;
+  const { category_id, brand_id, name, description, status } = req.body;
   const updated_by = req.user.id;
 
   try {
@@ -175,12 +175,13 @@ async function updateModel(req, res, next) {
       });
     }
 
-    const { category_id, brand_id } = existing[0];
+    const finalCategoryId = category_id !== undefined ? parseInt(category_id) : existing[0].category_id;
+    const finalBrandId = brand_id !== undefined ? parseInt(brand_id) : existing[0].brand_id;
 
     // Check if name is duplicate under the same category and brand
     const [duplicate] = await pool.query(
       'SELECT id FROM models WHERE category_id = ? AND brand_id = ? AND name = ? AND id != ?',
-      [category_id, brand_id, name, id]
+      [finalCategoryId, finalBrandId, name, id]
     );
     if (duplicate.length > 0) {
       return res.status(400).json({
@@ -191,7 +192,7 @@ async function updateModel(req, res, next) {
 
     await pool.query(
       'UPDATE models SET name = ?, description = ?, updated_by = ? WHERE id = ?',
-      [name, description || null, updated_by, id]
+      [finalCategoryId, finalBrandId, name, description || null, status || 'Activo', updated_by, id]
     );
 
     return res.status(200).json({
@@ -237,10 +238,30 @@ async function deleteModel(req, res, next) {
   }
 }
 
+
+/**
+ * Update model status (Admin only)
+ */
+async function updateModelStatus(req, res, next) {
+  const { id } = req.params;
+  const { status } = req.body;
+  try {
+    if (status !== 'Activo' && status !== 'Inactivo') {
+      return res.status(400).json({ success: false, message: "El estado debe ser 'Activo' o 'Inactivo'." });
+    }
+    const [result] = await pool.query('UPDATE `models` SET status = ? WHERE id = ?', [status, id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Modelo no encontrado.' });
+    }
+    return res.status(200).json({ success: true, message: 'Estado actualizado con éxito.', data: { id: parseInt(id), status } });
+  } catch (error) { next(error); }
+}
+
 module.exports = {
   createModel,
   getModels,
   getModelById,
   updateModel,
-  deleteModel
+  deleteModel,
+  updateModelStatus
 };

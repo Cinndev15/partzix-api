@@ -130,6 +130,7 @@ async function login(req, res, next) {
       user: {
         id: user.id,
         email: user.email,
+        name: user.name,
         role: user.role,
         status: user.status,
         warehouse_id: user.warehouse_id

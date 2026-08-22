@@ -109,6 +109,7 @@ CREATE TABLE IF NOT EXISTS `lines` (
   `category_id` INT NOT NULL,
   `name` VARCHAR(100) NOT NULL,
   `description` TEXT DEFAULT NULL,
+  `status` ENUM('Activo', 'Inactivo') DEFAULT 'Activo',
   `created_by` INT NOT NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

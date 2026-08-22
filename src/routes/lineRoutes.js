@@ -5,7 +5,8 @@ const {
   getLines,
   getLineById,
   updateLine,
-  deleteLine
+  deleteLine,
+  updateLineStatus
 } = require('../controllers/lineController');
 
 const router = express.Router();
@@ -155,6 +156,7 @@ router.get('/', getLines);
  */
 router.get('/:id', getLineById);
 router.put('/:id', authenticateToken, requireRole('admin'), updateLine);
+router.patch('/:id/status', authenticateToken, requireRole('admin'), updateLineStatus);
 router.delete('/:id', authenticateToken, requireRole('admin'), deleteLine);
 
 module.exports = router;

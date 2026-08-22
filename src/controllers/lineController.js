@@ -4,7 +4,7 @@ const { pool } = require('../db/db');
  * Create a new line under a category (Admin only)
  */
 async function createLine(req, res, next) {
-  const { category_id, name, description } = req.body;
+  const { category_id, name, description, status } = req.body;
   const created_by = req.user.id;
 
   try {
@@ -34,8 +34,8 @@ async function createLine(req, res, next) {
     }
 
     const [result] = await pool.query(
-      'INSERT INTO `lines` (category_id, name, description, created_by) VALUES (?, ?, ?, ?)',
-      [category_id, name, description || null, created_by]
+      'INSERT INTO `lines` (category_id, name, description, status, created_by) VALUES (?, ?, ?, ?, ?)',
+      [category_id, name, description || null, status || 'Activo', created_by]
     );
 
     return res.status(201).json({
@@ -62,7 +62,7 @@ async function getLines(req, res, next) {
 
   try {
     let query = `
-      SELECT l.id, l.category_id, c.name as category_name, l.name, l.description, l.created_at, l.updated_at, u.email as creator_email
+      SELECT l.id, l.category_id, c.name as category_name, l.name, l.description, l.status, l.created_at, l.updated_at, u.email as creator_email, COALESCE(u.name, u.email) as creator_name
       FROM \`lines\` l
       INNER JOIN categories c ON l.category_id = c.id
       INNER JOIN users u ON l.created_by = u.id
@@ -95,7 +95,7 @@ async function getLineById(req, res, next) {
 
   try {
     const query = `
-      SELECT l.id, l.category_id, c.name as category_name, l.name, l.description, l.created_at, l.updated_at, u.email as creator_email
+      SELECT l.id, l.category_id, c.name as category_name, l.name, l.description, l.status, l.created_at, l.updated_at, u.email as creator_email, COALESCE(u.name, u.email) as creator_name
       FROM \`lines\` l
       INNER JOIN categories c ON l.category_id = c.id
       INNER JOIN users u ON l.created_by = u.id
@@ -124,7 +124,7 @@ async function getLineById(req, res, next) {
  */
 async function updateLine(req, res, next) {
   const { id } = req.params;
-  const { name, description } = req.body;
+  const { category_id, name, description, status } = req.body;
 
   try {
     if (!name) {
@@ -143,12 +143,12 @@ async function updateLine(req, res, next) {
       });
     }
 
-    const { category_id } = existing[0];
+    const finalCategoryId = category_id !== undefined ? parseInt(category_id) : existing[0].category_id;
 
     // Check if name is duplicate under the same category
     const [duplicate] = await pool.query(
       'SELECT id FROM `lines` WHERE category_id = ? AND name = ? AND id != ?',
-      [category_id, name, id]
+      [finalCategoryId, name, id]
     );
     if (duplicate.length > 0) {
       return res.status(400).json({
@@ -158,8 +158,8 @@ async function updateLine(req, res, next) {
     }
 
     await pool.query(
-      'UPDATE `lines` SET name = ?, description = ? WHERE id = ?',
-      [name, description || null, id]
+      'UPDATE `lines` SET category_id = ?, name = ?, description = ?, status = ? WHERE id = ?',
+      [finalCategoryId, name, description || null, status || 'Activo', id]
     );
 
     return res.status(200).json({
@@ -203,10 +203,48 @@ async function deleteLine(req, res, next) {
   }
 }
 
+
+/**
+ * Update line status (Admin only)
+ */
+async function updateLineStatus(req, res, next) {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  try {
+    if (status !== 'Activo' && status !== 'Inactivo') {
+      return res.status(400).json({
+        success: false,
+        message: "El estado debe ser 'Activo' o 'Inactivo'."
+      });
+    }
+
+    const [result] = await pool.query('UPDATE `lines` SET status = ? WHERE id = ?', [status, id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Línea no encontrada.'
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Estado de línea actualizado con éxito.',
+      data: {
+        id: parseInt(id),
+        status
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   createLine,
   getLines,
   getLineById,
   updateLine,
-  deleteLine
+  deleteLine,
+  updateLineStatus
 };

@@ -271,9 +271,93 @@ async function resetPassword(req, res, next) {
   }
 }
 
+
+/**
+ * Get authenticated user profile
+ */
+async function getProfile(req, res, next) {
+  try {
+    const userId = req.user.id;
+    const [users] = await pool.query('SELECT id, email, name, role, created_at FROM users WHERE id = ?', [userId]);
+    if (users.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuario no encontrado.'
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      data: users[0]
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Update user profile (name and/or password)
+ */
+async function updateProfile(req, res, next) {
+  const { name, current_password, new_password } = req.body;
+  const userId = req.user.id;
+  try {
+    const [users] = await pool.query('SELECT * FROM users WHERE id = ?', [userId]);
+    if (users.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuario no encontrado.'
+      });
+    }
+    const user = users[0];
+
+    let nameToUpdate = user.name;
+    if (name !== undefined) {
+      nameToUpdate = name;
+    }
+
+    let newPasswordHash = user.password_hash;
+    if (new_password) {
+      if (!current_password) {
+        return res.status(400).json({
+          success: false,
+          message: 'Se requiere la contraseña actual para establecer una nueva contraseña.'
+        });
+      }
+      const passwordMatch = bcrypt.compareSync(current_password, user.password_hash);
+      if (!passwordMatch) {
+        return res.status(400).json({
+          success: false,
+          message: 'La contraseña actual provista es incorrecta.'
+        });
+      }
+      newPasswordHash = bcrypt.hashSync(new_password, 10);
+    }
+
+    await pool.query(
+      'UPDATE users SET name = ?, password_hash = ? WHERE id = ?',
+      [nameToUpdate, newPasswordHash, userId]
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: 'Perfil actualizado con éxito.',
+      data: {
+        id: user.id,
+        email: user.email,
+        name: nameToUpdate,
+        role: user.role
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   register,
   login,
   forgotPassword,
-  resetPassword
+  resetPassword,
+  getProfile,
+  updateProfile
 };

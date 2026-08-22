@@ -1,6 +1,7 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
-const { register, login, forgotPassword, resetPassword } = require('../controllers/authController');
+const { register, login, forgotPassword, resetPassword, getProfile, updateProfile } = require('../controllers/authController');
+const { authenticateToken } = require('../middlewares/authMiddleware');
 
 const router = express.Router();
 
@@ -211,6 +212,56 @@ router.post(
   ],
   validate,
   resetPassword
+);
+
+
+/**
+ * @openapi
+ * /api/auth/profile:
+ *   get:
+ *     summary: Obtiene el perfil del usuario autenticado
+ *     tags:
+ *       - Autenticación
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Perfil obtenido con éxito.
+ */
+router.get('/profile', authenticateToken, getProfile);
+
+/**
+ * @openapi
+ * /api/auth/profile:
+ *   put:
+ *     summary: Actualiza el perfil (nombre y/o contraseña)
+ *     tags:
+ *       - Autenticación
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               current_password:
+ *                 type: string
+ *               new_password:
+ *                 type: string
+ */
+router.put(
+  '/profile',
+  authenticateToken,
+  [
+    body('name').optional().trim().notEmpty().withMessage('El nombre no puede estar vacío.'),
+    body('current_password').optional().trim(),
+    body('new_password').optional().trim().isLength({ min: 6 }).withMessage('La nueva contraseña debe tener al menos 6 caracteres.')
+  ],
+  validate,
+  updateProfile
 );
 
 module.exports = router;

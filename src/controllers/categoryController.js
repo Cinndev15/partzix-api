@@ -4,7 +4,7 @@ const { pool } = require('../db/db');
  * Create a new category (Admin only)
  */
 async function createCategory(req, res, next) {
-  const { name, description } = req.body;
+  const { name, description, status } = req.body;
   const created_by = req.user.id;
 
   try {
@@ -25,8 +25,8 @@ async function createCategory(req, res, next) {
     }
 
     const [result] = await pool.query(
-      'INSERT INTO categories (name, description, created_by) VALUES (?, ?, ?)',
-      [name, description || null, created_by]
+      'INSERT INTO categories (name, description, status, created_by) VALUES (?, ?, ?, ?)',
+      [name, description || null, status || 'Activo', created_by]
     );
 
     return res.status(201).json({
@@ -50,7 +50,8 @@ async function createCategory(req, res, next) {
 async function getCategories(req, res, next) {
   try {
     const query = `
-      SELECT c.id, c.name, c.description, c.created_at, c.updated_at, u.email as creator_email
+      SELECT c.id, c.name, c.description, c.status, c.created_at, c.updated_at, 
+             u.email as creator_email, COALESCE(u.name, u.email) as creator_name
       FROM categories c
       INNER JOIN users u ON c.created_by = u.id
       ORDER BY c.name ASC
@@ -74,7 +75,8 @@ async function getCategoryById(req, res, next) {
 
   try {
     const query = `
-      SELECT c.id, c.name, c.description, c.created_at, c.updated_at, u.email as creator_email
+      SELECT c.id, c.name, c.description, c.status, c.created_at, c.updated_at, 
+             u.email as creator_email, COALESCE(u.name, u.email) as creator_name
       FROM categories c
       INNER JOIN users u ON c.created_by = u.id
       WHERE c.id = ?
@@ -102,7 +104,7 @@ async function getCategoryById(req, res, next) {
  */
 async function updateCategory(req, res, next) {
   const { id } = req.params;
-  const { name, description } = req.body;
+  const { name, description, status } = req.body;
 
   try {
     if (!name) {
@@ -131,8 +133,8 @@ async function updateCategory(req, res, next) {
     }
 
     await pool.query(
-      'UPDATE categories SET name = ?, description = ? WHERE id = ?',
-      [name, description || null, id]
+      'UPDATE categories SET name = ?, description = ?, status = ? WHERE id = ?',
+      [name, description || null, status || 'Activo', id]
     );
 
     return res.status(200).json({
@@ -175,10 +177,48 @@ async function deleteCategory(req, res, next) {
   }
 }
 
+
+/**
+ * Update category status (Admin only)
+ */
+async function updateCategoryStatus(req, res, next) {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  try {
+    if (status !== 'Activo' && status !== 'Inactivo') {
+      return res.status(400).json({
+        success: false,
+        message: "El estado debe ser 'Activo' o 'Inactivo'."
+      });
+    }
+
+    const [result] = await pool.query('UPDATE categories SET status = ? WHERE id = ?', [status, id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Categoría no encontrada.'
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Estado de categoría actualizado con éxito.',
+      data: {
+        id: parseInt(id),
+        status
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   createCategory,
   getCategories,
   getCategoryById,
   updateCategory,
-  deleteCategory
+  deleteCategory,
+  updateCategoryStatus
 };

@@ -5,7 +5,8 @@ const {
   getCategories,
   getCategoryById,
   updateCategory,
-  deleteCategory
+  deleteCategory,
+  updateCategoryStatus
 } = require('../controllers/categoryController');
 
 const router = express.Router();
@@ -142,6 +143,7 @@ router.get('/', getCategories);
  */
 router.get('/:id', getCategoryById);
 router.put('/:id', authenticateToken, requireRole('admin'), updateCategory);
+router.patch('/:id/status', authenticateToken, requireRole('admin'), updateCategoryStatus);
 router.delete('/:id', authenticateToken, requireRole('admin'), deleteCategory);
 
 module.exports = router;

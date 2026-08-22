@@ -109,7 +109,9 @@ async function registerWarehouse(req, res, next) {
     contact_person,
     user_class,
     website,
-    email
+    email,
+    workshop_vehicles,
+    workshop_specialties
   } = req.body;
 
   try {
@@ -146,8 +148,8 @@ async function registerWarehouse(req, res, next) {
     const insertQuery = `
       INSERT INTO warehouses (
         identification_number, name, address, country, department, city, phone,
-        contact_person, user_class, website, email, is_email_verified
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)
+        contact_person, user_class, website, email, workshop_vehicles, workshop_specialties, is_email_verified
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)
     `;
 
     const [result] = await pool.query(insertQuery, [
@@ -161,7 +163,9 @@ async function registerWarehouse(req, res, next) {
       contact_person || null,
       user_class,
       website || null,
-      email
+      email,
+      workshop_vehicles || null,
+      workshop_specialties || null
     ]);
 
     return res.status(201).json({
@@ -218,7 +222,9 @@ async function updateWarehouseProfile(req, res, next) {
     phone,
     contact_person,
     user_class,
-    website
+    website,
+    workshop_vehicles,
+    workshop_specialties
   } = req.body;
 
   try {
@@ -233,7 +239,7 @@ async function updateWarehouseProfile(req, res, next) {
     const updateQuery = `
       UPDATE warehouses
       SET name = ?, address = ?, country = ?, department = ?, city = ?, phone = ?,
-          contact_person = ?, user_class = ?, website = ?
+          contact_person = ?, user_class = ?, website = ?, workshop_vehicles = ?, workshop_specialties = ?
       WHERE id = ?
     `;
 
@@ -247,6 +253,8 @@ async function updateWarehouseProfile(req, res, next) {
       contact_person || null,
       user_class,
       website || null,
+      workshop_vehicles || null,
+      workshop_specialties || null,
       warehouseId
     ]);
 

@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS `warehouses` (
   `user_class` VARCHAR(100) NOT NULL,
   `website` VARCHAR(255) DEFAULT NULL,
   `email` VARCHAR(150) NOT NULL UNIQUE,
+  `workshop_vehicles` TEXT DEFAULT NULL,
+  `workshop_specialties` TEXT DEFAULT NULL,
   `is_email_verified` BOOLEAN DEFAULT FALSE,
   `status` ENUM('Por Aprobar', 'Aprobado', 'Negado') DEFAULT 'Por Aprobar',
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

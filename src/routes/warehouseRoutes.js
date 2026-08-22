@@ -85,6 +85,14 @@ const validate = (req, res, next) => {
  *           type: string
  *           description: Correo electrónico del almacén (debe ser verificado previamente).
  *           example: "fgonzalez@kayparts.co"
+ *         workshop_vehicles:
+ *           type: string
+ *           description: Tipo de vehículos que atiende el taller (solo si user_class es Taller Mecánico).
+ *           example: "Motos, Vehículos / Autos"
+ *         workshop_specialties:
+ *           type: string
+ *           description: Especialidades del taller (solo si user_class es Taller Mecánico).
+ *           example: "Suspensión y Dirección, Mecánica General"
  *     WarehouseProfile:
  *       type: object
  *       properties:
@@ -124,6 +132,12 @@ const validate = (req, res, next) => {
  *         email:
  *           type: string
  *           example: "fgonzalez@kayparts.co"
+ *         workshop_vehicles:
+ *           type: string
+ *           example: "Motos, Vehículos / Autos"
+ *         workshop_specialties:
+ *           type: string
+ *           example: "Suspensión y Dirección, Mecánica General"
  *         is_email_verified:
  *           type: boolean
  *           example: true
@@ -181,6 +195,14 @@ const validate = (req, res, next) => {
  *           type: string
  *           description: Dirección web del almacén (URL).
  *           example: "https://imotriz.com"
+ *         workshop_vehicles:
+ *           type: string
+ *           description: Tipo de vehículos que atiende el taller (solo si user_class es Taller Mecánico).
+ *           example: "Motos, Vehículos / Autos"
+ *         workshop_specialties:
+ *           type: string
+ *           description: Especialidades del taller (solo si user_class es Taller Mecánico).
+ *           example: "Suspensión y Dirección, Mecánica General"
  *     ErrorResponse:
  *       type: object
  *       properties:
@@ -420,7 +442,13 @@ router.post(
       .trim()
       .notEmpty().withMessage('El correo electrónico es requerido.')
       .isEmail().withMessage('El formato del correo electrónico no es válido.')
-      .normalizeEmail()
+      .normalizeEmail(),
+    body('workshop_vehicles')
+      .optional({ nullable: true, checkFalsy: true })
+      .trim(),
+    body('workshop_specialties')
+      .optional({ nullable: true, checkFalsy: true })
+      .trim()
   ],
   validate,
   registerWarehouse
@@ -536,7 +564,13 @@ router.put(
     body('website')
       .optional({ nullable: true, checkFalsy: true })
       .trim()
-      .isURL().withMessage('La URL del sitio web no es válida.')
+      .isURL().withMessage('La URL del sitio web no es válida.'),
+    body('workshop_vehicles')
+      .optional({ nullable: true, checkFalsy: true })
+      .trim(),
+    body('workshop_specialties')
+      .optional({ nullable: true, checkFalsy: true })
+      .trim()
   ],
   validate,
   updateWarehouseProfile

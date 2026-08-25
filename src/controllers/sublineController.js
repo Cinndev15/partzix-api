@@ -34,7 +34,7 @@ async function createSubline(req, res, next) {
     }
 
     const [result] = await pool.query(
-      'INSERT INTO sublines (line_id, name, description, created_by) VALUES (?, ?, ?, ?)',
+      'INSERT INTO sublines (line_id, name, description, status, created_by) VALUES (?, ?, ?, ?, ?)',
       [line_id, name, description || null, status || 'Activo', created_by]
     );
 
@@ -158,7 +158,7 @@ async function updateSubline(req, res, next) {
     }
 
     await pool.query(
-      'UPDATE sublines SET name = ?, description = ? WHERE id = ?',
+      'UPDATE sublines SET line_id = ?, name = ?, description = ?, status = ? WHERE id = ?',
       [finalLineId, name, description || null, status || 'Activo', id]
     );
 

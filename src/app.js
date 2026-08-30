@@ -44,15 +44,15 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Rate Limiting
-const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per window
-  standardHeaders: true,
-  legacyHeaders: false,
+// 1. Limiter para Login (evita fuerza bruta, pero no bloquea a usuarios legítimos)
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // Ventana de 15 minutos
+  max: 15,                  // Permite hasta 15 intentos por IP real en esos 15 min
   message: {
-    success: false,
-    message: 'Demasiadas solicitudes desde esta dirección IP. Por favor intente más tarde.'
-  }
+    message: 'Demasiados intentos fallidos desde esta dirección IP. Por favor intente más tarde.'
+  },
+  standardHeaders: true,    // Retorna info de rate limit en los headers `RateLimit-*`
+  legacyHeaders: false,     // Desactiva los headers antiguos `X-RateLimit-*`
 });
 
 const otpLimiter = rateLimit({
@@ -66,8 +66,8 @@ const otpLimiter = rateLimit({
   }
 });
 
-// Apply rate limiter specifically to routes
-app.use('/api/', apiLimiter);
+// 2. Aplicar limiters a rutas específicas (NO globalmente a toda la API)
+app.use('/api/auth/login', loginLimiter);
 app.use('/api/warehouses/send-otp', otpLimiter);
 app.use('/api/warehouses/verify-otp', otpLimiter);
 

@@ -34,7 +34,7 @@ async function createBrand(req, res, next) {
     }
 
     const [result] = await pool.query(
-      'INSERT INTO brands (category_id, name, description, created_by) VALUES (?, ?, ?, ?)',
+      'INSERT INTO brands (category_id, name, description, status, created_by) VALUES (?, ?, ?, ?, ?)',
       [category_id, name, description || null, status || 'Activo', created_by]
     );
 
@@ -46,6 +46,7 @@ async function createBrand(req, res, next) {
         category_id,
         name,
         description,
+        status: status || 'Activo',
         created_by
       }
     });
@@ -62,8 +63,8 @@ async function getBrands(req, res, next) {
 
   try {
     let query = `
-      SELECT b.id, b.category_id, c.name as category_name, b.name, b.description, b.created_at, b.updated_at, 
-             u1.email as creator_email, u2.email as updater_email
+      SELECT b.id, b.category_id, c.name as category_name, b.name, b.description, b.status, b.created_at, b.updated_at, 
+             u1.email as creator_email, u2.email as updater_email, COALESCE(u1.name, u1.email) as creator_name
       FROM brands b
       INNER JOIN categories c ON b.category_id = c.id
       INNER JOIN users u1 ON b.created_by = u1.id
@@ -97,8 +98,8 @@ async function getBrandById(req, res, next) {
 
   try {
     const query = `
-      SELECT b.id, b.category_id, c.name as category_name, b.name, b.description, b.created_at, b.updated_at, 
-             u1.email as creator_email, u2.email as updater_email
+      SELECT b.id, b.category_id, c.name as category_name, b.name, b.description, b.status, b.created_at, b.updated_at, 
+             u1.email as creator_email, u2.email as updater_email, COALESCE(u1.name, u1.email) as creator_name
       FROM brands b
       INNER JOIN categories c ON b.category_id = c.id
       INNER JOIN users u1 ON b.created_by = u1.id
@@ -163,7 +164,7 @@ async function updateBrand(req, res, next) {
     }
 
     await pool.query(
-      'UPDATE brands SET name = ?, description = ?, updated_by = ? WHERE id = ?',
+      'UPDATE brands SET category_id = ?, name = ?, description = ?, status = ?, updated_by = ? WHERE id = ?',
       [finalCategoryId, name, description || null, status || 'Activo', updated_by, id]
     );
 
@@ -172,9 +173,10 @@ async function updateBrand(req, res, next) {
       message: 'Marca actualizada con éxito.',
       data: {
         id: parseInt(id),
-        category_id,
+        category_id: finalCategoryId,
         name,
         description,
+        status: status || 'Activo',
         updated_by
       }
     });

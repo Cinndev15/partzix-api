@@ -33,8 +33,8 @@ async function createYear(req, res, next) {
     }
 
     const [result] = await pool.query(
-      'INSERT INTO years (year, created_by) VALUES (?, ?)',
-      [yearNum, created_by]
+      'INSERT INTO years (year, status, created_by) VALUES (?, ?, ?)',
+      [yearNum, status || 'Activo', created_by]
     );
 
     return res.status(201).json({
@@ -43,6 +43,7 @@ async function createYear(req, res, next) {
       data: {
         id: result.insertId,
         year: yearNum,
+        status: status || 'Activo',
         created_by
       }
     });
@@ -145,14 +146,15 @@ async function updateYear(req, res, next) {
       });
     }
 
-    await pool.query('UPDATE years SET year = ? WHERE id = ?', [yearNum, id]);
+    await pool.query('UPDATE years SET year = ?, status = ? WHERE id = ?', [yearNum, status || 'Activo', id]);
 
     return res.status(200).json({
       success: true,
       message: 'Año actualizado con éxito.',
       data: {
         id: parseInt(id),
-        year: yearNum
+        year: yearNum,
+        status: status || 'Activo'
       }
     });
   } catch (error) {

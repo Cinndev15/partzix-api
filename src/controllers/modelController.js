@@ -46,7 +46,7 @@ async function createModel(req, res, next) {
     }
 
     const [result] = await pool.query(
-      'INSERT INTO models (category_id, brand_id, name, description, created_by) VALUES (?, ?, ?, ?, ?)',
+      'INSERT INTO models (category_id, brand_id, name, description, status, created_by) VALUES (?, ?, ?, ?, ?, ?)',
       [category_id, brand_id, name, description || null, status || 'Activo', created_by]
     );
 
@@ -59,6 +59,7 @@ async function createModel(req, res, next) {
         brand_id,
         name,
         description,
+        status: status || 'Activo',
         created_by
       }
     });
@@ -76,8 +77,8 @@ async function getModels(req, res, next) {
   try {
     let query = `
       SELECT m.id, m.category_id, c.name as category_name, m.brand_id, b.name as brand_name, 
-             m.name, m.description, m.created_at, m.updated_at, 
-             u1.email as creator_email, u2.email as updater_email
+             m.name, m.description, m.status, m.created_at, m.updated_at, 
+             u1.email as creator_email, u2.email as updater_email, COALESCE(u1.name, u1.email) as creator_name
       FROM models m
       INNER JOIN categories c ON m.category_id = c.id
       INNER JOIN brands b ON m.brand_id = b.id
@@ -123,8 +124,8 @@ async function getModelById(req, res, next) {
   try {
     const query = `
       SELECT m.id, m.category_id, c.name as category_name, m.brand_id, b.name as brand_name, 
-             m.name, m.description, m.created_at, m.updated_at, 
-             u1.email as creator_email, u2.email as updater_email
+             m.name, m.description, m.status, m.created_at, m.updated_at, 
+             u1.email as creator_email, u2.email as updater_email, COALESCE(u1.name, u1.email) as creator_name
       FROM models m
       INNER JOIN categories c ON m.category_id = c.id
       INNER JOIN brands b ON m.brand_id = b.id
@@ -191,7 +192,7 @@ async function updateModel(req, res, next) {
     }
 
     await pool.query(
-      'UPDATE models SET name = ?, description = ?, updated_by = ? WHERE id = ?',
+      'UPDATE models SET category_id = ?, brand_id = ?, name = ?, description = ?, status = ?, updated_by = ? WHERE id = ?',
       [finalCategoryId, finalBrandId, name, description || null, status || 'Activo', updated_by, id]
     );
 
@@ -200,10 +201,11 @@ async function updateModel(req, res, next) {
       message: 'Modelo actualizado con éxito.',
       data: {
         id: parseInt(id),
-        category_id,
-        brand_id,
+        category_id: finalCategoryId,
+        brand_id: finalBrandId,
         name,
         description,
+        status: status || 'Activo',
         updated_by
       }
     });

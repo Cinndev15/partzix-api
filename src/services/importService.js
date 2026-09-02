@@ -75,7 +75,7 @@ function cleanString(str) {
 }
 
 /**
- * Loads all categories into quick lookup maps
+ * Loads all categories into quick lookup maps and array
  */
 async function loadCategoriesLookup() {
   const [rows] = await pool.query('SELECT id, name, status FROM categories');
@@ -87,7 +87,79 @@ async function loadCategoriesLookup() {
     byName.set(cleanString(cat.name), cat);
   }
 
-  return { byId, byName };
+  return { byId, byName, allCategories: rows };
+}
+
+/**
+ * Intelligently resolves a category from ID, exact name, substring, or semantic aliases
+ */
+function findCategory(rawCat, catById, catByName, allCategories) {
+  if (!rawCat) return null;
+
+  // 1. Resolve by numeric ID
+  if (!isNaN(rawCat) && catById.has(Number(rawCat))) {
+    return catById.get(Number(rawCat));
+  }
+
+  const clean = cleanString(rawCat);
+  if (!clean) return null;
+
+  // 2. Exact clean string match
+  if (catByName.has(clean)) {
+    return catByName.get(clean);
+  }
+
+  // 3. Substring match (e.g. 'autos' matches 'autos - camionetas')
+  for (const cat of allCategories) {
+    const catClean = cleanString(cat.name);
+    if (catClean === clean || catClean.includes(clean) || clean.includes(catClean)) {
+      return cat;
+    }
+  }
+
+  // 4. Token match against words in category name
+  for (const cat of allCategories) {
+    const tokens = cleanString(cat.name).split(/[\s\-_/,\\]+/);
+    if (tokens.includes(clean) || tokens.some(t => t.startsWith(clean) || clean.startsWith(t))) {
+      return cat;
+    }
+  }
+
+  // 5. Semantic alias mapping
+  const autoKeywords = [
+    'vehiculo', 'vehiculos', 'auto', 'autos', 'automovil', 'automoviles',
+    'carro', 'carros', 'camioneta', 'camionetas', 'suv', 'sedan', 'van', 'particular'
+  ];
+  const motoKeywords = [
+    'moto', 'motos', 'motocicleta', 'motocicletas', 'ciclomotor', 'scooter', 'enduro'
+  ];
+  const heavyKeywords = [
+    'pesado', 'pesados', 'camion', 'camiones', 'bus', 'buses', 'tractomula',
+    'tractocamion', 'tractocamiones', 'volqueta', 'volquetas', 'maquinaria', 'carga'
+  ];
+
+  if (autoKeywords.includes(clean)) {
+    const match = allCategories.find(c => {
+      const n = cleanString(c.name);
+      return n.includes('auto') || n.includes('camionet') || n.includes('vehicul') || n.includes('carro');
+    });
+    if (match) return match;
+  }
+
+  if (motoKeywords.includes(clean)) {
+    const match = allCategories.find(c => cleanString(c.name).includes('moto'));
+    if (match) return match;
+  }
+
+  if (heavyKeywords.includes(clean)) {
+    const match = allCategories.find(c => {
+      const n = cleanString(c.name);
+      return n.includes('pesad') || n.includes('camion') || n.includes('bus');
+    });
+    if (match) return match;
+  }
+
+  return null;
 }
 
 /**
@@ -124,11 +196,6 @@ async function loadModelsLookup() {
 
 /**
  * Import brands from Excel or CSV
- * Accepted headers:
- * - Categoría: categoria, category, category_id, categoria_id, id_categoria
- * - Nombre de Marca: nombre, name, marca, brand, nombre_marca, brand_name
- * - Descripción: descripcion, description, desc, detalle
- * - Estado: estado, status (Activo / Inactivo)
  */
 async function importBrands(buffer, userId) {
   const rows = parseFileBufferToRows(buffer);
@@ -141,12 +208,14 @@ async function importBrands(buffer, userId) {
     };
   }
 
-  const { byId: catById, byName: catByName } = await loadCategoriesLookup();
+  const { byId: catById, byName: catByName, allCategories } = await loadCategoriesLookup();
   const { byCategoryAndName: brandsByCatAndName } = await loadBrandsLookup();
 
   let imported = 0;
   let skipped = 0;
   const errors = [];
+
+  const availableCategoriesMsg = allCategories.map(c => `'${c.name}' (ID: ${c.id})`).join(', ');
 
   for (const row of rows) {
     const rowNum = row._rowNumber;
@@ -165,17 +234,12 @@ async function importBrands(buffer, userId) {
       continue;
     }
 
-    let category = null;
-    if (!isNaN(rawCat) && catById.has(Number(rawCat))) {
-      category = catById.get(Number(rawCat));
-    } else {
-      category = catByName.get(cleanString(rawCat));
-    }
+    const category = findCategory(rawCat, catById, catByName, allCategories);
 
     if (!category) {
       errors.push({
         row: rowNum,
-        message: `La categoría '${rawCat}' no existe en la base de datos.`
+        message: `La categoría '${rawCat}' no coincide con ninguna categoría disponible: ${availableCategoriesMsg}.`
       });
       continue;
     }
@@ -240,12 +304,6 @@ async function importBrands(buffer, userId) {
 
 /**
  * Import models from Excel or CSV
- * Accepted headers:
- * - Categoría: categoria, category, category_id, categoria_id, id_categoria
- * - Marca: marca, brand, brand_id, marca_id, id_marca, nombre_marca
- * - Nombre de Modelo: nombre_modelo, model_name, modelo, model, nombre, name
- * - Descripción: descripcion, description, desc, detalle
- * - Estado: estado, status (Activo / Inactivo)
  */
 async function importModels(buffer, userId) {
   const rows = parseFileBufferToRows(buffer);
@@ -258,13 +316,15 @@ async function importModels(buffer, userId) {
     };
   }
 
-  const { byId: catById, byName: catByName } = await loadCategoriesLookup();
+  const { byId: catById, byName: catByName, allCategories } = await loadCategoriesLookup();
   const { byId: brandById, byCategoryAndName: brandsByCatAndName } = await loadBrandsLookup();
   const { byKey: modelsByKey } = await loadModelsLookup();
 
   let imported = 0;
   let skipped = 0;
   const errors = [];
+
+  const availableCategoriesMsg = allCategories.map(c => `'${c.name}' (ID: ${c.id})`).join(', ');
 
   for (const row of rows) {
     const rowNum = row._rowNumber;
@@ -277,11 +337,7 @@ async function importModels(buffer, userId) {
 
     let category = null;
     if (rawCat) {
-      if (!isNaN(rawCat) && catById.has(Number(rawCat))) {
-        category = catById.get(Number(rawCat));
-      } else {
-        category = catByName.get(cleanString(rawCat));
-      }
+      category = findCategory(rawCat, catById, catByName, allCategories);
     }
 
     // 2. Resolve Brand
@@ -321,7 +377,7 @@ async function importModels(buffer, userId) {
     if (!category) {
       errors.push({
         row: rowNum,
-        message: `No se pudo determinar una categoría válida para la fila.`
+        message: `No se pudo determinar una categoría válida para '${rawCat || 'fila'}'. Disponibles: ${availableCategoriesMsg}.`
       });
       continue;
     }
@@ -395,7 +451,6 @@ async function importModels(buffer, userId) {
 
 /**
  * Combined vehicle catalog import (Category, Brand, Model in one file).
- * If a Brand does not exist under the Category, it is automatically created!
  */
 async function importVehicleCatalog(buffer, userId) {
   const rows = parseFileBufferToRows(buffer);
@@ -409,7 +464,7 @@ async function importVehicleCatalog(buffer, userId) {
     };
   }
 
-  const { byId: catById, byName: catByName } = await loadCategoriesLookup();
+  const { byId: catById, byName: catByName, allCategories } = await loadCategoriesLookup();
   const { byId: brandById, byCategoryAndName: brandsByCatAndName } = await loadBrandsLookup();
   const { byKey: modelsByKey } = await loadModelsLookup();
 
@@ -417,6 +472,8 @@ async function importVehicleCatalog(buffer, userId) {
   let modelsCreated = 0;
   let skipped = 0;
   const errors = [];
+
+  const availableCategoriesMsg = allCategories.map(c => `'${c.name}' (ID: ${c.id})`).join(', ');
 
   for (const row of rows) {
     const rowNum = row._rowNumber;
@@ -435,17 +492,12 @@ async function importVehicleCatalog(buffer, userId) {
       continue;
     }
 
-    let category = null;
-    if (!isNaN(rawCat) && catById.has(Number(rawCat))) {
-      category = catById.get(Number(rawCat));
-    } else {
-      category = catByName.get(cleanString(rawCat));
-    }
+    const category = findCategory(rawCat, catById, catByName, allCategories);
 
     if (!category) {
       errors.push({
         row: rowNum,
-        message: `La categoría '${rawCat}' no existe en la base de datos.`
+        message: `La categoría '${rawCat}' no coincide con ninguna categoría disponible: ${availableCategoriesMsg}.`
       });
       continue;
     }
@@ -470,7 +522,7 @@ async function importVehicleCatalog(buffer, userId) {
       try {
         const [bRes] = await pool.query(
           'INSERT INTO brands (category_id, name, description, status, created_by) VALUES (?, ?, ?, ?, ?)',
-          [category.id, brandName, `Importado automáticamente catálogo`, 'Activo', userId]
+          [category.id, brandName, `Importado automáticamente en catálogo`, 'Activo', userId]
         );
         brand = {
           id: bRes.insertId,
@@ -490,13 +542,12 @@ async function importVehicleCatalog(buffer, userId) {
       }
     }
 
-    // 3. Resolve Model (Optional in row if user only wants to register brands)
+    // 3. Resolve Model
     const modelName = getField(row, [
       'nombre_modelo', 'model_name', 'modelo', 'model', 'modelo_nombre'
     ]);
 
     if (!modelName) {
-      // Only brand was created or processed
       continue;
     }
 
@@ -550,13 +601,13 @@ async function importVehicleCatalog(buffer, userId) {
 function generateBrandsTemplate(format = 'xlsx') {
   const data = [
     {
-      'Categoria': 'Vehículos',
+      'Categoria': 'Autos - Camionetas',
       'Nombre de Marca': 'Toyota',
       'Descripcion': 'Fabricante multinacional japonés de automóviles',
       'Estado': 'Activo'
     },
     {
-      'Categoria': 'Vehículos',
+      'Categoria': 'Autos - Camionetas',
       'Nombre de Marca': 'Chevrolet',
       'Descripcion': 'Marca líder de automóviles y camionetas',
       'Estado': 'Activo'
@@ -565,6 +616,12 @@ function generateBrandsTemplate(format = 'xlsx') {
       'Categoria': 'Motos',
       'Nombre de Marca': 'Yamaha',
       'Descripcion': 'Fabricante de motocicletas',
+      'Estado': 'Activo'
+    },
+    {
+      'Categoria': 'Pesados - Camiones - Buses - Otros',
+      'Nombre de Marca': 'Hino',
+      'Descripcion': 'Camiones y chasises de carga pesada',
       'Estado': 'Activo'
     }
   ];
@@ -585,21 +642,21 @@ function generateBrandsTemplate(format = 'xlsx') {
 function generateModelsTemplate(format = 'xlsx') {
   const data = [
     {
-      'Categoria': 'Vehículos',
+      'Categoria': 'Autos - Camionetas',
       'Marca': 'Toyota',
       'Nombre de Modelo': 'Corolla',
       'Descripcion': 'Sedán compacto 1.8L / 2.0L',
       'Estado': 'Activo'
     },
     {
-      'Categoria': 'Vehículos',
+      'Categoria': 'Autos - Camionetas',
       'Marca': 'Toyota',
       'Nombre de Modelo': 'Hilux',
       'Descripcion': 'Camioneta Pickup 2.4L / 2.8L Diésel',
       'Estado': 'Activo'
     },
     {
-      'Categoria': 'Vehículos',
+      'Categoria': 'Autos - Camionetas',
       'Marca': 'Chevrolet',
       'Nombre de Modelo': 'Onix',
       'Descripcion': 'Hatchback / Sedán Turbo 1.0L',
@@ -630,21 +687,21 @@ function generateModelsTemplate(format = 'xlsx') {
 function generateCatalogTemplate(format = 'xlsx') {
   const data = [
     {
-      'Categoria': 'Vehículos',
+      'Categoria': 'Autos - Camionetas',
       'Marca': 'Mazda',
       'Modelo': 'Mazda 3',
       'Descripcion': 'Sedán / Hatchback Skyactiv',
       'Estado': 'Activo'
     },
     {
-      'Categoria': 'Vehículos',
+      'Categoria': 'Autos - Camionetas',
       'Marca': 'Mazda',
       'Modelo': 'CX-5',
       'Descripcion': 'SUV Compacta Skyactiv',
       'Estado': 'Activo'
     },
     {
-      'Categoria': 'Vehículos',
+      'Categoria': 'Autos - Camionetas',
       'Marca': 'Renault',
       'Modelo': 'Duster',
       'Descripcion': 'SUV 1.3L Turbo / 1.6L',

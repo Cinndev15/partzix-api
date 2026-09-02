@@ -1,19 +1,172 @@
 const express = require('express');
 const { authenticateToken, requireRole } = require('../middlewares/authMiddleware');
+const { uploadImportFile } = require('../middlewares/upload');
 const {
   createBrand,
   getBrands,
   getBrandById,
   updateBrand,
   deleteBrand,
-  updateBrandStatus
+  updateBrandStatus,
+  importBrands,
+  downloadBrandsTemplate,
+  importCatalog,
+  downloadCatalogTemplate
 } = require('../controllers/brandController');
 
-const router = Router();
+const router = express.Router();
 
-function Router() {
-  return express.Router();
-}
+/**
+ * @openapi
+ * /api/brands/import:
+ *   post:
+ *     summary: Importa marcas de vehículos desde Excel (.xlsx, .xls) o CSV (.csv) (Solo Admin)
+ *     description: Permite la carga masiva de marcas de vehículos mediante archivo Excel o CSV. Requiere token Bearer JWT de administrador.
+ *     tags:
+ *       - Marcas
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - file
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *                 description: Archivo Excel (.xlsx, .xls) o CSV (.csv) con las marcas a importar.
+ *     responses:
+ *       200:
+ *         description: Proceso de importación finalizado con detalle de filas procesadas.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Proceso de importación finalizado. Se importaron 10 marcas nuevas (2 duplicadas omitidas)."
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     total_rows:
+ *                       type: integer
+ *                       example: 12
+ *                     imported:
+ *                       type: integer
+ *                       example: 10
+ *                     skipped:
+ *                       type: integer
+ *                       example: 2
+ *                     errors:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *       400:
+ *         description: Archivo no enviado o formato no compatible.
+ *       401:
+ *         description: No autenticado.
+ *       403:
+ *         description: No autorizado (solo admin).
+ */
+router.post('/import', authenticateToken, requireRole('admin'), uploadImportFile, importBrands);
+
+/**
+ * @openapi
+ * /api/brands/import/template:
+ *   get:
+ *     summary: Descarga la plantilla de importación de marcas
+ *     description: Genera y descarga un archivo Excel (.xlsx) o CSV (.csv) de ejemplo con las columnas y formatos requeridos para importar marcas.
+ *     tags:
+ *       - Marcas
+ *     parameters:
+ *       - in: query
+ *         name: format
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [xlsx, csv]
+ *           default: xlsx
+ *         description: Formato de la plantilla a descargar (xlsx o csv).
+ *     responses:
+ *       200:
+ *         description: Archivo binario de plantilla descargado.
+ *         content:
+ *           application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *           text/csv:
+ *             schema:
+ *               type: string
+ *               format: binary
+ */
+router.get('/import/template', downloadBrandsTemplate);
+
+/**
+ * @openapi
+ * /api/brands/import/catalog:
+ *   post:
+ *     summary: Importa catálogo completo (Marcas y Modelos) desde Excel o CSV (Solo Admin)
+ *     description: Permite importar en un solo archivo marcas y modelos. Si la marca no existe bajo la categoría, se crea automáticamente. Requiere token Bearer JWT de administrador.
+ *     tags:
+ *       - Marcas
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - file
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *                 description: Archivo Excel o CSV con catálogo de marcas y modelos.
+ *     responses:
+ *       200:
+ *         description: Proceso de importación finalizado.
+ *       400:
+ *         description: Archivo inválido.
+ *       401:
+ *         description: No autenticado.
+ *       403:
+ *         description: No autorizado.
+ */
+router.post('/import/catalog', authenticateToken, requireRole('admin'), uploadImportFile, importCatalog);
+
+/**
+ * @openapi
+ * /api/brands/import/catalog-template:
+ *   get:
+ *     summary: Descarga la plantilla del catálogo completo (Marcas y Modelos)
+ *     description: Descarga una plantilla de ejemplo en Excel o CSV para importar marcas y modelos juntos.
+ *     tags:
+ *       - Marcas
+ *     parameters:
+ *       - in: query
+ *         name: format
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [xlsx, csv]
+ *           default: xlsx
+ *         description: Formato del archivo (xlsx o csv).
+ *     responses:
+ *       200:
+ *         description: Plantilla descargada con éxito.
+ */
+router.get('/import/catalog-template', downloadCatalogTemplate);
 
 /**
  * @openapi
@@ -164,3 +317,4 @@ router.patch('/:id/status', authenticateToken, requireRole('admin'), updateBrand
 router.delete('/:id', authenticateToken, requireRole('admin'), deleteBrand);
 
 module.exports = router;
+

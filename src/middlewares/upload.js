@@ -56,7 +56,32 @@ const uploadFields = upload.fields([
 
 const uploadProductImages = upload.array('images', 10);
 
+// Memory storage for Excel and CSV file imports
+const importStorage = multer.memoryStorage();
+const importFileFilter = (req, file, cb) => {
+  const allowedExtensions = ['.xlsx', '.xls', '.csv'];
+  const ext = path.extname(file.originalname).toLowerCase();
+
+  if (allowedExtensions.includes(ext)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Formato de archivo no válido. Solo se admiten archivos Excel (.xlsx, .xls) o CSV (.csv).'), false);
+  }
+};
+
+const uploadImport = multer({
+  storage: importStorage,
+  fileFilter: importFileFilter,
+  limits: {
+    fileSize: 15 * 1024 * 1024 // 15MB
+  }
+});
+
+const uploadImportFile = uploadImport.single('file');
+
 module.exports = {
   uploadFields,
-  uploadProductImages
+  uploadProductImages,
+  uploadImportFile
 };
+

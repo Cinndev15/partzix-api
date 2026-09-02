@@ -1,15 +1,112 @@
 const express = require('express');
 const { authenticateToken, requireRole } = require('../middlewares/authMiddleware');
+const { uploadImportFile } = require('../middlewares/upload');
 const {
   createModel,
   getModels,
   getModelById,
   updateModel,
   deleteModel,
-  updateModelStatus
+  updateModelStatus,
+  importModels,
+  downloadModelsTemplate
 } = require('../controllers/modelController');
 
 const router = express.Router();
+
+/**
+ * @openapi
+ * /api/models/import:
+ *   post:
+ *     summary: Importa modelos de vehículos desde Excel (.xlsx, .xls) o CSV (.csv) (Solo Admin)
+ *     description: Permite la carga masiva de modelos de vehículos vinculados a su categoría y marca mediante archivo Excel o CSV. Requiere token Bearer JWT de administrador.
+ *     tags:
+ *       - Modelos
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - file
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *                 description: Archivo Excel (.xlsx, .xls) o CSV (.csv) con los modelos a importar.
+ *     responses:
+ *       200:
+ *         description: Proceso de importación finalizado con detalle de filas procesadas.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Proceso de importación finalizado. Se importaron 25 modelos nuevos (3 duplicados omitidos)."
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     total_rows:
+ *                       type: integer
+ *                       example: 28
+ *                     imported:
+ *                       type: integer
+ *                       example: 25
+ *                     skipped:
+ *                       type: integer
+ *                       example: 3
+ *                     errors:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *       400:
+ *         description: Archivo no enviado o formato no compatible.
+ *       401:
+ *         description: No autenticado.
+ *       403:
+ *         description: No autorizado (solo admin).
+ */
+router.post('/import', authenticateToken, requireRole('admin'), uploadImportFile, importModels);
+
+/**
+ * @openapi
+ * /api/models/import/template:
+ *   get:
+ *     summary: Descarga la plantilla de importación de modelos
+ *     description: Genera y descarga un archivo Excel (.xlsx) o CSV (.csv) de ejemplo con las columnas y formatos requeridos para importar modelos.
+ *     tags:
+ *       - Modelos
+ *     parameters:
+ *       - in: query
+ *         name: format
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [xlsx, csv]
+ *           default: xlsx
+ *         description: Formato de la plantilla a descargar (xlsx o csv).
+ *     responses:
+ *       200:
+ *         description: Archivo binario de plantilla descargado.
+ *         content:
+ *           application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *           text/csv:
+ *             schema:
+ *               type: string
+ *               format: binary
+ */
+router.get('/import/template', downloadModelsTemplate);
 
 /**
  * @openapi
@@ -170,3 +267,4 @@ router.patch('/:id/status', authenticateToken, requireRole('admin'), updateModel
 router.delete('/:id', authenticateToken, requireRole('admin'), deleteModel);
 
 module.exports = router;
+

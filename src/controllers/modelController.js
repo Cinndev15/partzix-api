@@ -1,4 +1,8 @@
 const { pool } = require('../db/db');
+const {
+  importModels: importModelsService,
+  generateModelsTemplate
+} = require('../services/importService');
 
 /**
  * Create a new model under a brand and a category (Admin only)
@@ -259,11 +263,59 @@ async function updateModelStatus(req, res, next) {
   } catch (error) { next(error); }
 }
 
+/**
+ * Import models from Excel or CSV (Admin only)
+ */
+async function importModels(req, res, next) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No se ha proporcionado ningún archivo. Debe adjuntar un archivo Excel (.xlsx, .xls) o CSV (.csv) en el campo "file".'
+      });
+    }
+
+    const userId = req.user.id;
+    const result = await importModelsService(req.file.buffer, userId);
+
+    return res.status(200).json({
+      success: true,
+      message: `Proceso de importación finalizado. Se importaron ${result.imported} modelos nuevos (${result.skipped} duplicados omitidos).`,
+      data: result
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Download sample template for Models import
+ */
+async function downloadModelsTemplate(req, res, next) {
+  try {
+    const format = (req.query.format || 'xlsx').toLowerCase();
+    const buffer = generateModelsTemplate(format);
+    const contentType = format === 'csv'
+      ? 'text/csv; charset=utf-8'
+      : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    const filename = `plantilla_modelos.${format === 'csv' ? 'csv' : 'xlsx'}`;
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    return res.send(buffer);
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   createModel,
   getModels,
   getModelById,
   updateModel,
   deleteModel,
-  updateModelStatus
+  updateModelStatus,
+  importModels,
+  downloadModelsTemplate
 };
+

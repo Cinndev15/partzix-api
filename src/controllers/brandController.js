@@ -1,4 +1,10 @@
 const { pool } = require('../db/db');
+const {
+  importBrands: importBrandsService,
+  importVehicleCatalog: importCatalogService,
+  generateBrandsTemplate,
+  generateCatalogTemplate
+} = require('../services/importService');
 
 /**
  * Create a new brand under a category (Admin only)
@@ -230,11 +236,106 @@ async function updateBrandStatus(req, res, next) {
   } catch (error) { next(error); }
 }
 
+/**
+ * Import brands from Excel or CSV (Admin only)
+ */
+async function importBrands(req, res, next) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No se ha proporcionado ningún archivo. Debe adjuntar un archivo Excel (.xlsx, .xls) o CSV (.csv) en el campo "file".'
+      });
+    }
+
+    const userId = req.user.id;
+    const result = await importBrandsService(req.file.buffer, userId);
+
+    return res.status(200).json({
+      success: true,
+      message: `Proceso de importación finalizado. Se importaron ${result.imported} marcas nuevas (${result.skipped} duplicadas omitidas).`,
+      data: result
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Download sample template for Brands import
+ */
+async function downloadBrandsTemplate(req, res, next) {
+  try {
+    const format = (req.query.format || 'xlsx').toLowerCase();
+    const buffer = generateBrandsTemplate(format);
+    const contentType = format === 'csv'
+      ? 'text/csv; charset=utf-8'
+      : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    const filename = `plantilla_marcas.${format === 'csv' ? 'csv' : 'xlsx'}`;
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    return res.send(buffer);
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Import combined vehicle catalog (Brands and Models) from Excel or CSV (Admin only)
+ */
+async function importCatalog(req, res, next) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No se ha proporcionado ningún archivo. Debe adjuntar un archivo Excel (.xlsx, .xls) o CSV (.csv) en el campo "file".'
+      });
+    }
+
+    const userId = req.user.id;
+    const result = await importCatalogService(req.file.buffer, userId);
+
+    return res.status(200).json({
+      success: true,
+      message: `Proceso de importación del catálogo finalizado. Se crearon ${result.brands_created} marcas y ${result.models_created} modelos (${result.skipped} duplicados omitidos).`,
+      data: result
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Download sample template for Catalog import
+ */
+async function downloadCatalogTemplate(req, res, next) {
+  try {
+    const format = (req.query.format || 'xlsx').toLowerCase();
+    const buffer = generateCatalogTemplate(format);
+    const contentType = format === 'csv'
+      ? 'text/csv; charset=utf-8'
+      : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    const filename = `plantilla_catalogo_vehiculos.${format === 'csv' ? 'csv' : 'xlsx'}`;
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    return res.send(buffer);
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   createBrand,
   getBrands,
   getBrandById,
   updateBrand,
   deleteBrand,
-  updateBrandStatus
+  updateBrandStatus,
+  importBrands,
+  downloadBrandsTemplate,
+  importCatalog,
+  downloadCatalogTemplate
 };
+

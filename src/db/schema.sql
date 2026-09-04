@@ -169,6 +169,23 @@ CREATE TABLE IF NOT EXISTS `models` (
   UNIQUE KEY `unique_category_brand_model` (`category_id`, `brand_id`, `name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Table structure for vehicle_versions
+CREATE TABLE IF NOT EXISTS `vehicle_versions` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `model_id` INT NOT NULL,
+  `name` VARCHAR(100) NOT NULL,
+  `description` TEXT DEFAULT NULL,
+  `status` ENUM('Activo', 'Inactivo') DEFAULT 'Activo',
+  `created_by` INT NOT NULL,
+  `updated_by` INT DEFAULT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT `fk_version_model` FOREIGN KEY (`model_id`) REFERENCES `models` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_version_creator` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_version_updater` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE RESTRICT,
+  UNIQUE KEY `unique_model_version` (`model_id`, `name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Table structure for years
 CREATE TABLE IF NOT EXISTS `years` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
@@ -272,6 +289,15 @@ CREATE TABLE IF NOT EXISTS `product_models` (
   PRIMARY KEY (`product_id`, `model_id`),
   CONSTRAINT `fk_pm_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_pm_model` FOREIGN KEY (`model_id`) REFERENCES `models` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table structure for product_vehicle_versions (Compatibility)
+CREATE TABLE IF NOT EXISTS `product_vehicle_versions` (
+  `product_id` INT NOT NULL,
+  `version_id` INT NOT NULL,
+  PRIMARY KEY (`product_id`, `version_id`),
+  CONSTRAINT `fk_pvv_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_pvv_version` FOREIGN KEY (`version_id`) REFERENCES `vehicle_versions` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Table structure for product_years (Compatibility)

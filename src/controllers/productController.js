@@ -74,6 +74,7 @@ async function createProduct(req, res, next) {
     technical_description,
     // Compatibilities & Taxes
     model_ids,
+    version_ids,
     year_ids,
     displacement_ids,
     tax_ids
@@ -147,6 +148,11 @@ async function createProduct(req, res, next) {
     const parsedModels = parseArrayField(model_ids);
     for (const mId of parsedModels) {
       await pool.query('INSERT IGNORE INTO product_models (product_id, model_id) VALUES (?, ?)', [productId, mId]);
+    }
+
+    const parsedVersions = parseArrayField(version_ids);
+    for (const vId of parsedVersions) {
+      await pool.query('INSERT IGNORE INTO product_vehicle_versions (product_id, version_id) VALUES (?, ?)', [productId, vId]);
     }
 
     const parsedYears = parseArrayField(year_ids);
@@ -309,12 +315,14 @@ async function getProductById(req, res, next) {
     // Load related details
     const [images] = await pool.query('SELECT id, image_path, is_main FROM product_images WHERE product_id = ? ORDER BY is_main DESC, id ASC', [id]);
     const [models] = await pool.query('SELECT m.id, m.name, b.name as brand_name FROM product_models pm INNER JOIN models m ON pm.model_id = m.id INNER JOIN brands b ON m.brand_id = b.id WHERE pm.product_id = ?', [id]);
+    const [versions] = await pool.query('SELECT v.id, v.name, m.name as model_name, b.name as brand_name FROM product_vehicle_versions pvv INNER JOIN vehicle_versions v ON pvv.version_id = v.id INNER JOIN models m ON v.model_id = m.id INNER JOIN brands b ON m.brand_id = b.id WHERE pvv.product_id = ?', [id]);
     const [years] = await pool.query('SELECT y.id, y.year FROM product_years py INNER JOIN years y ON py.year_id = y.id WHERE py.product_id = ?', [id]);
     const [displacements] = await pool.query('SELECT d.id, d.displacement FROM product_displacements pd INNER JOIN displacements d ON pd.displacement_id = d.id WHERE pd.product_id = ?', [id]);
     const [taxes] = await pool.query('SELECT t.id, t.name, t.rate_percent FROM product_taxes pt INNER JOIN taxes t ON pt.tax_id = t.id WHERE pt.product_id = ?', [id]);
 
     product.images = images;
     product.compatible_models = models;
+    product.compatible_versions = versions;
     product.compatible_years = years;
     product.compatible_displacements = displacements;
     product.applicable_taxes = taxes;
@@ -356,6 +364,7 @@ async function updateProduct(req, res, next) {
     technical_description,
     // Compatibilities, Taxes & Image Deletion
     model_ids,
+    version_ids,
     year_ids,
     displacement_ids,
     tax_ids,
@@ -424,6 +433,14 @@ async function updateProduct(req, res, next) {
       const parsedModels = parseArrayField(model_ids);
       for (const mId of parsedModels) {
         await pool.query('INSERT IGNORE INTO product_models (product_id, model_id) VALUES (?, ?)', [id, mId]);
+      }
+    }
+
+    if (version_ids !== undefined) {
+      await pool.query('DELETE FROM product_vehicle_versions WHERE product_id = ?', [id]);
+      const parsedVersions = parseArrayField(version_ids);
+      for (const vId of parsedVersions) {
+        await pool.query('INSERT IGNORE INTO product_vehicle_versions (product_id, version_id) VALUES (?, ?)', [id, vId]);
       }
     }
 

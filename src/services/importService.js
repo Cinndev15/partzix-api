@@ -726,11 +726,242 @@ function generateCatalogTemplate(format = 'xlsx') {
   return xlsx.write(wb, { type: 'buffer', bookType: 'xlsx' });
 }
 
+/**
+ * Loads all vehicle versions into quick lookup maps
+ */
+async function loadVersionsLookup() {
+  const [rows] = await pool.query('SELECT id, model_id, name, status FROM vehicle_versions');
+  const byKey = new Map();
+
+  for (const v of rows) {
+    const key = `${v.model_id}_${cleanString(v.name)}`;
+    byKey.set(key, v);
+  }
+
+  return { byKey };
+}
+
+/**
+ * Import vehicle versions from Excel or CSV
+ */
+async function importVersions(buffer, userId) {
+  const rows = parseFileBufferToRows(buffer);
+  if (rows.length === 0) {
+    return {
+      total_rows: 0,
+      imported: 0,
+      skipped: 0,
+      errors: ['El archivo está vacío o no contiene filas de datos.']
+    };
+  }
+
+  const { byId: catById, byName: catByName, allCategories } = await loadCategoriesLookup();
+  const { byId: brandById, byCategoryAndName: brandsByCatAndName } = await loadBrandsLookup();
+  const [modelRows] = await pool.query('SELECT id, category_id, brand_id, name FROM models');
+  const { byKey: versionsByKey } = await loadVersionsLookup();
+
+  // Map models by id, by brand_id + name, and by name
+  const modelById = new Map();
+  const modelByBrandAndName = new Map();
+  for (const m of modelRows) {
+    modelById.set(Number(m.id), m);
+    modelByBrandAndName.set(`${m.brand_id}_${cleanString(m.name)}`, m);
+  }
+
+  let imported = 0;
+  let skipped = 0;
+  const errors = [];
+
+  for (const row of rows) {
+    const rowNum = row._rowNumber;
+
+    // 1. Resolve Category (Optional helper)
+    const rawCat = getField(row, [
+      'categoria_id', 'category_id', 'id_categoria', 'id_category',
+      'categoria', 'category', 'nombre_categoria', 'categoria_nombre',
+      'nombre_de_categoria', 'nombre_de_la_categoria'
+    ]);
+    let category = null;
+    if (rawCat) {
+      category = findCategory(rawCat, catById, catByName, allCategories);
+    }
+
+    // 2. Resolve Brand
+    const rawBrand = getField(row, [
+      'marca_id', 'brand_id', 'id_marca', 'id_brand',
+      'marca', 'brand', 'nombre_marca', 'brand_name',
+      'nombre_de_marca', 'nombre_de_la_marca'
+    ]);
+    let brand = null;
+    if (rawBrand) {
+      if (!isNaN(rawBrand) && brandById.has(Number(rawBrand))) {
+        brand = brandById.get(Number(rawBrand));
+      } else if (category) {
+        brand = brandsByCatAndName.get(`${category.id}_${cleanString(rawBrand)}`);
+      } else {
+        for (const b of brandById.values()) {
+          if (cleanString(b.name) === cleanString(rawBrand)) {
+            brand = b;
+            break;
+          }
+        }
+      }
+    }
+
+    // 3. Resolve Model
+    const rawModel = getField(row, [
+      'modelo_id', 'model_id', 'id_modelo', 'id_model',
+      'modelo', 'model', 'nombre_modelo', 'model_name',
+      'nombre_de_modelo', 'nombre_del_modelo'
+    ]);
+
+    if (!rawModel) {
+      errors.push({
+        row: rowNum,
+        message: 'El modelo (ID o Nombre) es requerido.'
+      });
+      continue;
+    }
+
+    let model = null;
+    if (!isNaN(rawModel) && modelById.has(Number(rawModel))) {
+      model = modelById.get(Number(rawModel));
+    } else if (brand) {
+      model = modelByBrandAndName.get(`${brand.id}_${cleanString(rawModel)}`);
+    } else {
+      // Find across all models if brand wasn't provided
+      for (const m of modelById.values()) {
+        if (cleanString(m.name) === cleanString(rawModel)) {
+          model = m;
+          break;
+        }
+      }
+    }
+
+    if (!model) {
+      errors.push({
+        row: rowNum,
+        message: `El modelo '${rawModel}' no fue encontrado en el sistema.`
+      });
+      continue;
+    }
+
+    // 4. Resolve Version Name
+    const versionName = getField(row, [
+      'nombre_version', 'version_name', 'version', 'nombre', 'name', 'version_nombre',
+      'nombre_de_version', 'nombre_de_la_version', 'version_del_vehiculo', 'version_vehiculo',
+      'trim', 'edicion', 'submodelo'
+    ]);
+
+    if (!versionName) {
+      errors.push({
+        row: rowNum,
+        message: 'El nombre de la versión es requerido.'
+      });
+      continue;
+    }
+
+    const description = getField(row, ['descripcion', 'description', 'desc', 'detalle']) || null;
+    const rawStatus = getField(row, ['estado', 'status']);
+    let status = 'Activo';
+    if (rawStatus && cleanString(rawStatus) === 'inactivo') {
+      status = 'Inactivo';
+    }
+
+    // 5. Check for duplicates under this model
+    const versionKey = `${model.id}_${cleanString(versionName)}`;
+    if (versionsByKey.has(versionKey)) {
+      skipped++;
+      continue;
+    }
+
+    try {
+      const [result] = await pool.query(
+        'INSERT INTO vehicle_versions (model_id, name, description, status, created_by) VALUES (?, ?, ?, ?, ?)',
+        [model.id, versionName, description, status, userId]
+      );
+
+      const newVersion = {
+        id: result.insertId,
+        model_id: model.id,
+        name: versionName,
+        status
+      };
+      versionsByKey.set(versionKey, newVersion);
+      imported++;
+    } catch (err) {
+      errors.push({
+        row: rowNum,
+        message: `Error al insertar versión '${versionName}': ${err.message}`
+      });
+    }
+  }
+
+  return {
+    total_rows: rows.length,
+    imported,
+    skipped,
+    errors
+  };
+}
+
+/**
+ * Generate Excel / CSV templates for Vehicle Versions
+ */
+function generateVersionsTemplate(format = 'xlsx') {
+  const data = [
+    {
+      'Categoria': 'Autos - Camionetas',
+      'Marca': 'Toyota',
+      'Modelo': 'Corolla',
+      'Nombre de Version': 'XEI 2.0 CVT',
+      'Descripcion': 'Versión intermedia con transmisión automática CVT',
+      'Estado': 'Activo'
+    },
+    {
+      'Categoria': 'Autos - Camionetas',
+      'Marca': 'Toyota',
+      'Modelo': 'Corolla',
+      'Nombre de Version': 'SEG Hybrid',
+      'Descripcion': 'Versión full equipo híbrida 1.8L',
+      'Estado': 'Activo'
+    },
+    {
+      'Categoria': 'Autos - Camionetas',
+      'Marca': 'Chevrolet',
+      'Modelo': 'Onix',
+      'Nombre de Version': 'Premier Turbo',
+      'Descripcion': 'Versión tope de gama motor 1.0 Turbo',
+      'Estado': 'Activo'
+    },
+    {
+      'Categoria': 'Autos - Camionetas',
+      'Marca': 'Mazda',
+      'Modelo': 'CX-5',
+      'Nombre de Version': 'Grand Touring LX AWD',
+      'Descripcion': 'Tracción total con motor 2.5L Turbo',
+      'Estado': 'Activo'
+    }
+  ];
+
+  const ws = xlsx.utils.json_to_sheet(data);
+  const wb = xlsx.utils.book_new();
+  xlsx.utils.book_append_sheet(wb, ws, 'Versiones');
+
+  if (format === 'csv') {
+    return xlsx.write(wb, { type: 'buffer', bookType: 'csv' });
+  }
+  return xlsx.write(wb, { type: 'buffer', bookType: 'xlsx' });
+}
+
 module.exports = {
   importBrands,
   importModels,
+  importVersions,
   importVehicleCatalog,
   generateBrandsTemplate,
   generateModelsTemplate,
+  generateVersionsTemplate,
   generateCatalogTemplate
 };
+
